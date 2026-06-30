@@ -1,0 +1,11 @@
+.home-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 600;
+}
