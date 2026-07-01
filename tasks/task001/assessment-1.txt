@@ -1,0 +1,9 @@
+产物不满意：
+1. AuthPage.css 全文件大量使用了 CSS 自定义属性如 `var(--bg-page)`、`var(--primary-color)`、`var(--danger-color)`、`var(--text-primary)` 等，但这些变量在 auth 模块内没有任何地方定义。AuthPage.css 自身不包含 `:root` 块，index.css 中也没有定义这些变量。唯一定义了这些变量的文件是 `src/pages/flights/flights.css`，那是另一个任务的样式文件不会被 AuthPage 加载。导致所有 CSS 属性值解析为无效值，页面渲染为透明背景、无文字颜色、无边框阴影的完全崩坏状态。原因是在编写样式时引用了在其他任务文件中定义的变量而非在本模块内声明。正确做法是在 AuthPage.css 顶部添加 `:root` 块定义所有需要的 CSS 自定义属性。
+
+2. RegisterForm.jsx 在 `isAuthenticated === true` 时直接 `return null`。用户在注册表单提交成功后，AuthContext.register 会将 isAuthenticated 设为 true，导致 RegisterForm 返回 null。但 AuthPageContent 的 activeTab 仍停留在 'register'，renderContent 渲染的是 null，用户会看到认证容器内主内容区一片空白，既没有成功反馈也没有自动切换到登录 tab。ForgotPasswordForm.jsx 存在相同问题，已登录用户点击"找回密码"tab 后同样显示空白。原因是直接在渲染层用 return null 处理登录态而非通过父组件的 activeTab 切换逻辑来跳转。
+
+3. validation.js 的 validateChangePasswordForm 函数签名为 `(formData, currentPassword)`，第 131 行检查 `oldPassword !== currentPassword` 来显示"旧密码不正确"提示。但在 ChangePasswordForm.jsx 中调用方式是 `validateChangePasswordForm(formData, formData.oldPassword)`，即传入的 currentPassword 就是用户输入的 oldPassword 本身。这导致 `oldPassword !== currentPassword` 永远为 false，"旧密码不正确"的错误提示永远不可能从该纯函数触发。旧密码的实际校验依赖 AuthContext.changePassword 中的 verifyUser 对 mock 数据库做检查，但这违背了纯函数校验层应自包含校验逻辑的设计意图。
+
+过程不满意：
+4. 模型在步骤 1 查看项目结构时，打开了一个与本任务完全无关的文件 `src/pages/restaurant-queue/RestaurantQueue.jsx` 来了解代码风格，之后又查看了 `src/pages/__tests__/flights/validation.test.js` 和 `src/pages/flights/flights.css`。按照提示词要求，auth 任务的所有代码应集中在 `src/pages/auth/` 下，与其他任务严格隔离。模型花时间查看无关任务的文件会分散注意力且可能引入对其他任务的错误假设（事实上 CSS 变量问题正可能是因为参照了 flights.css 中的变量定义而未在本模块声明）。正确做法是只参考项目根目录下的 package.json、vite.config.js 和 App.jsx 来了解项目骨架即可。

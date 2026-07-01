@@ -1,0 +1,9 @@
+产物不满意：
+1. KanbanPage.jsx 中 `dragOverTaskIndex` 状态变量在整个文件中只被赋过一次非 null 值（handleTaskDragEnd 中设为 null），从未有任何地方调用 `setDragOverTaskIndex(someIndex)` 来记录拖拽悬停的目标位置，导致 dragOverTaskIndex 永远为 null。同列拖拽时 `destIdx = dragOverTaskIndex ?? sourceTasks.length - 1` 永远取末尾位置，跨列拖拽时 `destIdx = dragOverTaskIndex ?? destTasks.length` 同样永远追加到目标列末尾。这意味着提示词第 2 条要求的"拖拽后任务位置和所属列应正确更新"完全未实现，所有任务被拖拽后只能排在末尾，无法插入到列的中间位置。根本原因是 handleTaskDragOver 回调为空函数体，没有将拖拽悬停事件上报给主页面，同时 KanbanColumn.jsx 中虽然设置了 data-task-index 属性但从未被读取用于计算插入位置。正确做法是在 dragOver 事件中通过鼠标 Y 坐标和列内卡片位置计算目标索引，并通过 setDragOverTaskIndex 更新状态。
+
+2. KanbanPage.jsx 中 TaskModal 的 key 属性为 `${modalMode}-${editingTask?.id ?? 'new'}-${defaultColumnId}`，当用户在同一列第一次点击"新增任务"填写内容后关闭弹窗，再次点击同一列的"新增任务"时 key 不变（都是 `add-new-todo`），isOpen 从 false 变 true 但组件是同一个实例，之前填写的表单内容（标题、描述等）会残留，用户期望看到的是空表单。key 策略只区分了"编辑哪个任务"和"新增到哪列"，没有覆盖"同一列多次新增"的场景。正确做法是 key 中包含递增计数器或时间戳。
+
+3. utils.js 中的 sortTasksByPriority 函数被导出且测试文件编写了 3 个测试用例，但在 KanbanPage.jsx 中并未被导入，全项目搜索也找不到任何调用。任务排序完全依赖 groupTasksByColumn 中的 order 字段排序，优先级排序函数沦为死代码。原因是模型在开发时预留了优先级排序功能但最终未将其集成到看板列渲染流程中。
+
+过程不满意：
+4. 模型在完成所有代码和测试后首次运行 ESLint 检查，发现了 KanbanPage.jsx 中未使用的导入项和 TaskModal.jsx 中 setState 的 lint 错误。但模型在修复过程中采取了"写整个文件重写"的方式处理 TaskModal.jsx，将原本的 useEffect 同步方案完全替换为 key 重挂载方案，而非做最小修改。这相当于对一个已经可以通过测试功能的组件进行了架构级别的重写，增加了引入新 BUG 的风险。正确做法是先用 useEffect 的依赖数组修复 ESLint 警告，保留原有的表单初始化逻辑，仅在确定 useEffect 方案不可行后再考虑架构调整。

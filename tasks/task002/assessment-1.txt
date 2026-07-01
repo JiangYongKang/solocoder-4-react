@@ -1,0 +1,11 @@
+产物不满意：
+1. ProductManagement.jsx 组件在首次编写时使用 ref 回调的方式直接在 JSX 中设置 checkbox 的 indeterminate 属性，导致 React 触发无限渲染循环，页面启动后直接白屏卡死。模型随后不得不将方案改为 useEffect + useRef 重新实现。根本原因是对 React 渲染机制的理解不足，在 JSX 的属性赋值中直接修改 DOM 而非在副作用中操作。
+
+2. productManager.js 的 validatePriceInput 函数对 Infinity 输入无任何防护。Number(Infinity) 得到 Infinity 且能通过 isNaN 和 `>=0` 的检查，函数会静默返回 `{valid: true, value: Infinity}`。validateStockInput 虽然会被 Number.isInteger 拦截 Infinity，但 validatePriceInput 完全缺少有限数检查。测试文件也未覆盖 Infinity/-Infinity 输入。正确做法是在数值校验中增加 `Number.isFinite(num)` 检查。
+
+3. productManager.js 的 batchSetStatus 函数的 affectedCount 统计的是选中商品数量而非实际状态发生变化的商品数量。如果用户选中 3 件商品（2 件已上架、1 件已下架）执行批量上架，affectedCount 返回 3 并通知"已批量上架 3 件商品"，但实际只有 1 件状态发生了变化。原因是统计逻辑使用了 `products.filter(p => idSet.has(p.id)).length` 而未检查商品原始状态是否与目标状态不同。正确做法是先过滤出状态需要变更的商品再计数。
+
+4. validateStockInput 和 validatePriceInput 对空白字符串输入存在共同缺陷。传入 `' '`（纯空格）时 `value === ''` 为 false，但 `Number(' ')` 会转为 0，后续所有校验通过并静默将库存清为 0。正确做法是在字符串判断前先做 trim 处理。
+
+过程不满意：
+5. 模型在启动开发服务器验证后发现无限渲染问题后，对 ProductManagement.jsx 文件连续执行了 4 次 edit_file_search_replace 来分步修补，而非先整体阅读文件理清所有改点后一次性完成修改。这种零散修改的方式增加了出错风险，也反映出模型在首次编写时没有预见到 render 阶段操作 DOM 的连锁反应。

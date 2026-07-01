@@ -1,0 +1,11 @@
+产物不满意：
+1. food-order/utils/cartManager.js 中的 generateCartItemId 函数当 selectedSpecs 为空对象或 null 时，specKey 最终为空字符串，生成的 ID 格式为 "prod-1|"（尾部带一个无意义的竖线分隔符）。所有无规格商品的购物车 item ID 尾部都多出一个竖线，虽然在功能上不影响去重判断，但在调试日志和代码阅读中不直观。正确做法是当 specKey 为空时只返回 productId，不拼接分隔符。
+
+2. FoodOrder.jsx 的 handleConfirmOrder 函数中当 submitOrder 返回 success: false 时，代码仅调用 alert(result.message) 弹出系统弹窗并设置 orderStatus 为 FAILED，但未设置 setShowOrderResult(true)。这导致 OrderResult.jsx 中第 113-124 行的失败状态 UI（包含失败图标、"下单失败"文案和"知道了"按钮）永远不会被触发，成为死代码分支。用户只能看到系统原生 alert 弹窗，体验不一致。原因是在失败处理分支中遗漏了打开结果页面的逻辑。正确做法是在失败时同样设置 showOrderResult 为 true 让 OrderResult 展示失败状态。
+
+3. food-order/utils/cartManager.js 中的 findApplicableDiscount 函数直接对入参 discountRules 调用 sort 方法做原地排序。sort 会修改原数组的顺序，如果调用方在多个地方复用同一个 discountRules 引用，第一次调用会永久改变数组顺序，之后其他依赖原始排序的调用逻辑可能产生错误结果。正确做法是用 `[...discountRules].sort()` 创建副本后操作。
+
+4. food-order/utils/cartManager.js 中 submitOrder 函数的订单 status 字段硬编码为字符串 'pending'，而非引用 types.js 中定义的 ORDER_STATUS.PENDING 常量。同时 CheckoutBar 组件在内部独立计算了 total 而非直接使用父组件 FoodOrder 计算好的值，违背了单一数据源原则。如果未来计算逻辑调整，两个位置的公式需要同步修改。
+
+过程不满意：
+5. 模型在整个实现过程中没有运行一次 ESLint 检查。思考过程中仅在最后调用了 GetDiagnostics 工具，但返回结果为空。模型的总结中也只提到了 Build 成功而没有 ESLint 检查结果。此外 mockData.js 中的 generateOrderId 函数使用了已弃用的 `String.prototype.substr()`，本应被 ESLint 发现但未被检测。正确的做法是在完成所有功能后运行 `npx eslint src/pages/food-order/` 来确认代码质量。

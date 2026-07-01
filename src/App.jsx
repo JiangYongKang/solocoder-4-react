@@ -1,11 +1,7 @@
-import './App.css'
+import GroupBuyPage from './pages/group-buy/GroupBuy'
 
 function App() {
-  return (
-    <main className="home-page">
-      <h1 className="home-title">SoloCoder 四期</h1>
-    </main>
-  )
+  return <GroupBuyPage />
 }
 
 export default App

@@ -1,0 +1,11 @@
+产物不满意：
+1. CourseLearning.jsx 中的 refreshStats 函数被定义为 useCallback 包装的内部函数，但 ESLint 首次检查发现该函数被定义却从未被调用。模型为消除 lint 警告在 handleProgressUpdate 中新增了对 refreshStats 的调用，但 refreshStats 定义在 handleProgressUpdate 之后且后者又依赖前者计算的 stats，形成了 effect 内部的循环依赖——handleProgressUpdate 修改 stats 后又调用 refreshStats 再次更新 stats，导致学习统计的定时器频繁重建。正确做法是梳理所有 handler 之间的调用关系，按依赖顺序编写代码，避免形成循环依赖链路。
+
+2. mockData.js 中课程数据 model 的 totalDuration 字段值为 12600，但通过累加所有章节下所有课时的 duration 字段得到的实际总和为 16800。这个数据不一致导致 LearningStats 组件中展示的课程总时长与实际学习进度之间存在偏差。原因是在编写 mock 数据时手动填写了 totalDuration 而未通过遍历课时动态计算。正确做法是通过代码自动累加所有课时 duration 来生成 totalDuration。
+
+3. StudyNotes.jsx 组件中为了消除 ESLint 的 setState-in-render 警告，在一处直接判断当前课时变化时调用了 setNotes([]) 来清空状态。这个修改虽然在初次渲染时不会无限循环（因为依赖的 lessonId 不会频繁在 render 中变化），但在 React 并发模式下仍可能导致状态更新时序异常。正确做法是将状态同步逻辑放在 useEffect 中追踪 lessonId 变化，而非在渲染阶段触发状态变更。
+
+4. utils.js 的 compareTimestamps 相关测试中，模型最初写入的断言期望两个连续操作在同一毫秒内完成时时间戳能严格区分，但实际 JavaScript 执行环境中两个连续操作可能在同 1ms 内完成。模型连续修改了 3 次测试断言才全部通过。测试文件中还缺失对 findLessonById、getNextLesson、getPrevLesson 等 mockData.js 中导出函数的单元测试。
+
+过程不满意：
+5. 模型在编写测试文件后多次运行测试失败，根本原因之一是 import 路径写成了 `../../courses/utils` 而非正确的相对路径。这个错误说明模型在编写测试文件时没有对照实际文件目录结构来验证路径。修复后测试仍有 2 个断言失败，模型又连续修改了 3 次测试断言才全部通过。整个测试调试过程呈现"跑测试→看报错→改断言→再跑"的试错式开发模式，而非预先对照 mockData 计算好每个测试的期望值。

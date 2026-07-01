@@ -1,0 +1,11 @@
+产物不满意：
+1. GroupBuy.jsx 中 ProductCard 被包裹在一个带 `onClick={handleViewGroups}` 的 div 中，而 ProductCard 内部"发起新团"和"去参团"按钮的 onClick 均未调用 `e.stopPropagation()`。用户点击内向的任意按钮时，事件冒泡到外层 div 同时触发 handleViewGroups 打开拼团列表弹窗。导致点击"发起新团"后，订单确认弹窗和拼团列表弹窗同时渲染叠加显示，两个模态框同时出现在屏幕上。原因是事件层级处理缺失，内层按钮的点击未阻止向外层冒泡。正确做法是在 ProductCard 内部按钮的 onClick 中调用 `e.stopPropagation()` 或将外层 onClick 移到 ProductCard 内部仅放在非按钮区域。
+
+2. GroupBuy.css 中 `.pickup-point-name-row` 选择器在文件第 833 行和第 1073 行被重复定义了两次。第二个定义覆盖了第一个定义中的 `flex: 1` 和 `margin-right: 8px` 属性，导致提货点选择器中卡片头部的布局完全失效。原因是在长 CSS 文件中重复定义了同一个类名而未检查是否已存在。正确做法是合并两处定义或给第二处使用不同的类名。
+
+3. group-buy/utils/groupBuyManager.js 中的 createNewGroup 函数使用 `Date.now() + Math.random()` 拼接生成成员 ID 和团 ID，joinGroup 函数中新增成员的 ID 也使用同样的随机数模式。与 hotel 和 flights 任务中的 generateOrderNo 函数一样依赖随机数保证唯一性，在高并发场景下存在 ID 碰撞可能。此外 createOrder 函数接收 quantity 参数但完全忽略了 product.stock 字段，用户可以下单 quantity=9999 即使库存只有 500。正确做法是用递增计数器配合时间戳保证 ID 唯一，并在下单前检查库存上限。
+
+4. group-buy/utils/groupBuyManager.js 中的 getLeaderNickname 函数被导出但 GroupCard 中直接使用 `members[0]` 获取团长信息而非调用此函数，该函数在测试和生产代码中均无引用，成为孤立死代码。getSuccessfulGroups 和 maskPhone 函数同样仅在测试文件中被使用但生产代码从未调用。原因是模型编写了辅助函数但未将其与 UI 组件正确集成。正确做法是让 GroupCard 使用 getLeaderNickname 获取团长昵称，移除完全无引用的死代码。
+
+过程不满意：
+5. 模型在编写 groupBuyManager.test.js 后首次运行测试发现有 3 个断言失败。模型对这 3 个失败的测试连续执行了 3 次 edit_file_search_replace 来修正断言值，每次修改一个断言后都没有运行测试确认，而是连续改完 3 次后才运行 vitest 来验证。如果其中某次修改又引入了新的错误，这种批量修改的方式会使得定位问题变得困难。正确做法是每修改一个断言就立即运行对应的测试文件，确认修改正确后再继续下一个，避免多错误叠加导致定位混乱。

@@ -1,0 +1,11 @@
+产物不满意：
+1. flights/utils/helpers.js 中的 calculateOrderPrice 函数在计算税费和保险时使用了 `selections.length` 而非仅统计已选航班加舱位的条目数量。当 selections 中存在 `{flight: null, cabin: null}` 的条目时（如单程已选而往返的返程尚未选择），第 120 行的 `taxTotal = perPersonTax * selections.length * passengers.length` 会错误地对未选择的航班行程计收税费。虽然主页面 index.jsx 中 allFlightsSelected 守卫条件在正常流程下阻止了此问题，但 calculateOrderPrice 作为纯函数应自身防御此边界情况。正确做法是与第 114 行机票总价计算保持一致，只对 `sel.flight && sel.cabin` 为真的 selection 计收税费。
+
+2. FlightList.jsx 中航班列表为空时，`allPrices = flights.flatMap(f => f.cabins.map(c => c.price))` 产生空数组，`Math.min(...[])` 返回 Infinity，`Math.max(...[])` 返回 -Infinity。这两个值传入 Filters 组件后，价格筛选器的 placeholder 会显示"最低 ¥Infinity"和"最高 ¥-Infinity"。原因是没有对空数组做兜底处理。正确做法是当 flights 为空时给 minPrice 和 maxPrice 设置默认值 0。
+
+3. SearchForm.jsx 中当出发城市已选为"北京(PEK)"时，用户点击输入框聚焦后 `onFocus` 回调会将格式化后的显示文本作为搜索关键词传入 filterCities。城市数据中 name 为"北京"、code 为"PEK"，均不包含"北京(PEK)"完整字符串，filterCities 返回空数组导致下拉框无结果。已选城市的用户想通过点击聚焦来浏览城市列表时什么都看不到。正确做法是在聚焦时传入城市 code 或原始 name 而非格式化后的完整显示文本。
+
+4. flights/utils/helpers.js 中的 generateOrderNo 函数与 hotel 任务存在完全相同的设计缺陷：使用 Date.now() + 4 位随机数拼接生成订单号。在并发或高频调用场景下存在碰撞风险。正确做法是使用时间戳配合递增序号来保证生成的 ID 绝对唯一。
+
+过程不满意：
+5. 模型在运行测试后发现 2 个失败断言，直接选择编辑测试断言来匹配实际结果而非先检查生产代码的函数逻辑是否有误。虽然本次确实是断言值写错，但这种"测试报错就改测试"的行为模式存在风险，如果实际是函数逻辑 BUG 而非断言错误，这种做法会掩盖真实问题。正确做法是先对照 mockData 确认预期值是否正确，排除函数逻辑问题后再修改测试断言。
