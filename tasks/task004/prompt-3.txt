@@ -1,0 +1,4 @@
+在线课程学习页面存在视频播放中断和全局配置被修改的问题：
+1. VideoPlayer 组件在之前的修复中移除了区分"课时切换"和"同一课时内进度更新"的守卫逻辑。当前 CourseLearning 每隔 5 秒会保存播放进度，每次保存产生新的 initialProgress 对象引用，VideoPlayer 的 useEffect 错误地将同一课时的定时保存事件视为课时切换，执行了 setCurrentTime 和 setIsPlaying(false)。导致视频播放每 5 秒被强制暂停一次，播放功能不可用。需要恢复或重新实现两种场景的区分：仅在课时 ID 实际变化时才重置播放状态，同一课时内的进度更新不应中断播放。
+2. eslint.config.js 中 react-hooks/set-state-in-effect 规则被全局置为 off，该规则对项目中所有任务包的 lint 检查都生效。这只是针对个别组件的警告而非错误，不应通过全局关闭规则来解决。需要恢复该规则为原有状态，如果个别组件确实需要在 effect 中 setState，使用局部 eslint-disable 注释处理。
+3. 修复完成后重新运行 pnpm run test，需要让 courses 相关的所有测试通过。

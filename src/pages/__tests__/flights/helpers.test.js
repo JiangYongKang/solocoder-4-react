@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   formatDate,
   getDateStr,
@@ -316,10 +316,14 @@ describe('calculateOrderPrice', () => {
     expect(result.total).toBe(0)
   })
 
-  it('无选择航班有乘客不影响机票总价', () => {
+  it('无选择航班有乘客不影响机票总价，税费也应为0', () => {
     const emptySelections = [{ type: 'departure', flight: null, cabin: null }]
     const result = calculateOrderPrice(emptySelections, mockPassengers)
+    expect(result.validSelectionCount).toBe(0)
     expect(result.flightTotal).toBe(0)
+    expect(result.taxTotal).toBe(0)
+    expect(result.insuranceTotal).toBe(0)
+    expect(result.total).toBe(0)
   })
 
   it('往返时仅选择去程应只计收去程税费，返程未选择不计费', () => {
@@ -400,15 +404,36 @@ describe('generateOrderNo', () => {
   })
 
   it('订单号中应包含自增计数器，保证同毫秒内也不碰撞', () => {
-    const orderNos = []
-    for (let i = 0; i < 10; i++) {
-      orderNos.push(generateOrderNo())
+    const fixedTimestamp = 1719888000000
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedTimestamp)
+    try {
+      const orderNos = []
+      for (let i = 0; i < 10; i++) {
+        orderNos.push(generateOrderNo())
+      }
+      const unique = new Set(orderNos)
+      expect(unique.size).toBe(10)
+      orderNos.forEach(no => {
+        expect(no.length).toBeGreaterThanOrEqual(2 + 13 + 6 + 3)
+        expect(no).toContain(fixedTimestamp.toString())
+      })
+    } finally {
+      dateSpy.mockRestore()
     }
-    const unique = new Set(orderNos)
-    expect(unique.size).toBe(10)
-    orderNos.forEach(no => {
-      expect(no.length).toBeGreaterThanOrEqual(2 + 13 + 6 + 3)
-    })
+  })
+
+  it('即使在同一毫秒内连续生成1000个订单号，也应全部唯一', () => {
+    const fixedTimestamp = 1719888000001
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedTimestamp)
+    try {
+      const orderNos = new Set()
+      for (let i = 0; i < 1000; i++) {
+        orderNos.add(generateOrderNo())
+      }
+      expect(orderNos.size).toBe(1000)
+    } finally {
+      dateSpy.mockRestore()
+    }
   })
 
   it('订单号长度应足够', () => {

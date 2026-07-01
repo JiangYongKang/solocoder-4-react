@@ -22,6 +22,7 @@ import {
     formatPrice,
     getOngoingGroups,
     getProductGroups,
+    getSuccessfulGroups,
     isUserInGroup,
     joinGroup,
     pickupOrder,

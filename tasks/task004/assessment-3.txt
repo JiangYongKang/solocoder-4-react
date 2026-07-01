@@ -1,0 +1,6 @@
+产物不满意：
+1. VideoPlayer.jsx 中 useEffect 依赖数组保留了 `initialProgress`，每次进度保存时 effect 重复触发仅被守卫返回。同时该组件 `key={currentLessonId}` 强制重挂载，`lastLessonIdRef` 始终初始化为当前课时 ID，守卫恒为 false，内部 setState 成为死代码。模型未识别 `key` 与守卫的功能重叠，守护体内代码仅为通过 ESLint 检查。
+
+过程不满意：
+1. 模型在收到任务后第一步直接创建了 3 项 Todo，此时还未读取任何文件了解代码现状。应为先分析问题再规划。跳过分析直接动手导致后续 eslint-disable 注释添加出现全加、全删、再精确加的试错迭代——先在三个文件全部添加注释，运行 ESLint 后发现有未使用警告，又一次性从全部文件删除注释，重新运行 ESLint 后才精确添加。若先在无注释状态运行一次 ESLint 再精准添加，可将三轮编辑合并为一轮。
+2. 模型修复完成后仅运行了 `pnpm run test` 和 `npx eslint src/pages/courses/` 即宣布所有问题已修复。但 63 个通过的测试全部是 utils.js 和 mockData.js 的纯 JS 函数测试，无任何用例覆盖 VideoPlayer 组件的播放中断场景或 `lastLessonIdRef` 守卫逻辑。模型将工具函数测试通过等同于视频播放修复验证，二者无直接因果关系。对涉及组件渲染和定时器交互的播放问题，仅靠工具函数测试通过不足以确认修复生效。

@@ -1,13 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  validateSearchParams,
-  validateGuestInfo,
-  calculateNights,
-  calculatePriceDetail,
-  filterRooms,
-  formatDate,
-  generateOrderNo,
-  resetOrderNoCounter,
+    calculateNights,
+    calculatePriceDetail,
+    filterRooms,
+    formatDate,
+    validateGuestInfo,
+    validateSearchParams,
 } from '../../hotel/utils/validators';
 
 describe('validateSearchParams - 搜索参数验证', () => {
@@ -441,16 +439,30 @@ describe('formatDate - 日期格式化', () => {
 });
 
 describe('generateOrderNo - 订单号生成', () => {
-  beforeEach(() => {
-    resetOrderNoCounter();
-  });
+  async function getFreshGenerateOrderNo() {
+    vi.resetModules();
+    const mod = await import('../../hotel/utils/validators');
+    return mod.generateOrderNo;
+  }
 
-  it('订单号以HTL开头', () => {
+  it('订单号以HTL开头', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
     const orderNo = generateOrderNo();
     expect(orderNo.startsWith('HTL')).toBe(true);
   });
 
-  it('订单号包含时间戳部分', () => {
+  it('订单号不包含随机数字符串，仅使用时间戳和计数器', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
+    const orderNo = generateOrderNo();
+    const timestamp = orderNo.slice(3, 16);
+    const counter = orderNo.slice(16, 24);
+    expect(/^\d+$/.test(timestamp)).toBe(true);
+    expect(/^\d+$/.test(counter)).toBe(true);
+    expect(orderNo.length).toBe(24);
+  });
+
+  it('订单号包含时间戳部分', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
     const before = Date.now();
     const orderNo = generateOrderNo();
     const after = Date.now();
@@ -459,23 +471,39 @@ describe('generateOrderNo - 订单号生成', () => {
     expect(timestampPart).toBeLessThanOrEqual(after + 1000);
   });
 
-  it('订单号长度固定（HTL + 13位时间戳 + 4位计数器 + 4位随机数）', () => {
+  it('订单号长度固定（HTL + 13位时间戳 + 8位计数器）', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
     const orderNo = generateOrderNo();
-    expect(orderNo.length).toBe(3 + 13 + 4 + 4);
+    expect(orderNo.length).toBe(3 + 13 + 8);
   });
 
-  it('订单号包含计数器部分，连续生成时递增', () => {
+  it('订单号计数器部分为8位，不足时补零', async () => {
     const mockNow = 1700000000000;
     const originalNow = Date.now;
     Date.now = () => mockNow;
-    resetOrderNoCounter();
     try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
+      const orderNo = generateOrderNo();
+      const counterPart = orderNo.slice(16, 24);
+      expect(counterPart).toHaveLength(8);
+      expect(counterPart).toBe('00000000');
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('订单号包含计数器部分，连续生成时递增', async () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
       const orderNo1 = generateOrderNo();
       const orderNo2 = generateOrderNo();
       const orderNo3 = generateOrderNo();
-      const counter1 = Number(orderNo1.slice(16, 20));
-      const counter2 = Number(orderNo2.slice(16, 20));
-      const counter3 = Number(orderNo3.slice(16, 20));
+      const counter1 = Number(orderNo1.slice(16, 24));
+      const counter2 = Number(orderNo2.slice(16, 24));
+      const counter3 = Number(orderNo3.slice(16, 24));
       expect(counter1).toBe(0);
       expect(counter2).toBe(1);
       expect(counter3).toBe(2);
@@ -484,24 +512,25 @@ describe('generateOrderNo - 订单号生成', () => {
     }
   });
 
-  it('时间戳变化时计数器重置为0', () => {
+  it('时间戳变化时计数器重置为0', async () => {
     const originalNow = Date.now;
     try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
       Date.now = () => 1700000000000;
-      resetOrderNoCounter();
       const orderNo1 = generateOrderNo();
       const orderNo2 = generateOrderNo();
-      expect(Number(orderNo1.slice(16, 20))).toBe(0);
-      expect(Number(orderNo2.slice(16, 20))).toBe(1);
+      expect(Number(orderNo1.slice(16, 24))).toBe(0);
+      expect(Number(orderNo2.slice(16, 24))).toBe(1);
       Date.now = () => 1700000000001;
       const orderNo3 = generateOrderNo();
-      expect(Number(orderNo3.slice(16, 20))).toBe(0);
+      expect(Number(orderNo3.slice(16, 24))).toBe(0);
     } finally {
       Date.now = originalNow;
     }
   });
 
-  it('生成的订单号不重复（连续100次）', () => {
+  it('生成的订单号不重复（连续100次）', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
     const set = new Set();
     for (let i = 0; i < 100; i++) {
       set.add(generateOrderNo());
@@ -509,7 +538,8 @@ describe('generateOrderNo - 订单号生成', () => {
     expect(set.size).toBe(100);
   });
 
-  it('生成的订单号不重复（连续1000次）', () => {
+  it('生成的订单号不重复（连续1000次）', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
     const set = new Set();
     for (let i = 0; i < 1000; i++) {
       set.add(generateOrderNo());
@@ -517,12 +547,12 @@ describe('generateOrderNo - 订单号生成', () => {
     expect(set.size).toBe(1000);
   });
 
-  it('同一毫秒内生成10000个订单号不重复（模拟高并发）', () => {
+  it('同一毫秒内生成10000个订单号不重复（模拟高并发）', async () => {
     const mockNow = 1700000000000;
     const originalNow = Date.now;
     Date.now = () => mockNow;
-    resetOrderNoCounter();
     try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
       const set = new Set();
       for (let i = 0; i < 10000; i++) {
         set.add(generateOrderNo());
@@ -533,16 +563,32 @@ describe('generateOrderNo - 订单号生成', () => {
     }
   });
 
-  it('同一毫秒内连续生成的订单号计数器部分严格递增', () => {
+  it('同一毫秒内生成100000个订单号不重复（高压力测试）', async () => {
     const mockNow = 1700000000000;
     const originalNow = Date.now;
     Date.now = () => mockNow;
-    resetOrderNoCounter();
     try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
+      const set = new Set();
+      for (let i = 0; i < 100000; i++) {
+        set.add(generateOrderNo());
+      }
+      expect(set.size).toBe(100000);
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('同一毫秒内连续生成的订单号计数器部分严格递增', async () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
       const counters = [];
       for (let i = 0; i < 100; i++) {
         const orderNo = generateOrderNo();
-        counters.push(Number(orderNo.slice(16, 20)));
+        counters.push(Number(orderNo.slice(16, 24)));
       }
       for (let i = 0; i < 100; i++) {
         expect(counters[i]).toBe(i);
@@ -552,11 +598,11 @@ describe('generateOrderNo - 订单号生成', () => {
     }
   });
 
-  it('不同毫秒生成的订单号时间戳部分不同', () => {
+  it('不同毫秒生成的订单号时间戳部分不同', async () => {
     const originalNow = Date.now;
     try {
+      const generateOrderNo = await getFreshGenerateOrderNo();
       Date.now = () => 1700000000000;
-      resetOrderNoCounter();
       const orderNo1 = generateOrderNo();
       Date.now = () => 1700000000001;
       const orderNo2 = generateOrderNo();
@@ -566,37 +612,56 @@ describe('generateOrderNo - 订单号生成', () => {
     }
   });
 
-  it('计数器达到9999后模运算归零（边界测试）', () => {
+  it('同一毫秒内生成的订单号仅计数器部分不同，时间戳部分完全相同（验证不依赖随机数）', async () => {
     const mockNow = 1700000000000;
     const originalNow = Date.now;
     Date.now = () => mockNow;
-    resetOrderNoCounter();
     try {
-      let lastOrderNo;
-      for (let i = 0; i <= 10000; i++) {
-        lastOrderNo = generateOrderNo();
+      const generateOrderNo = await getFreshGenerateOrderNo();
+      const orderNos = [];
+      for (let i = 0; i < 100; i++) {
+        orderNos.push(generateOrderNo());
       }
-      const counter = Number(lastOrderNo.slice(16, 20));
-      expect(counter).toBe(0);
+      const expectedTimestamp = '1700000000000';
+      for (let i = 0; i < 100; i++) {
+        const timestampPart = orderNos[i].slice(3, 16);
+        expect(timestampPart).toBe(expectedTimestamp);
+      }
+      const counters = orderNos.map((o) => Number(o.slice(16, 24)));
+      for (let i = 0; i < 100; i++) {
+        expect(counters[i]).toBe(i);
+      }
+      const randomPart = orderNos.map((o) => o.slice(24));
+      expect(randomPart.every((p) => p === '')).toBe(true);
     } finally {
       Date.now = originalNow;
     }
   });
 
-  it('resetOrderNoCounter可以重置计数器状态', () => {
-    const mockNow = 1700000000000;
-    const originalNow = Date.now;
-    Date.now = () => mockNow;
-    try {
-      generateOrderNo();
-      generateOrderNo();
-      const orderNoBefore = generateOrderNo();
-      expect(Number(orderNoBefore.slice(16, 20))).toBe(2);
-      resetOrderNoCounter();
-      const orderNoAfter = generateOrderNo();
-      expect(Number(orderNoAfter.slice(16, 20))).toBe(0);
-    } finally {
-      Date.now = originalNow;
-    }
+  it('生成的订单号完全由时间戳和递增计数器组成，不含任何随机成分', async () => {
+    const generateOrderNo = await getFreshGenerateOrderNo();
+    const orderNo = generateOrderNo();
+    expect(orderNo.startsWith('HTL')).toBe(true);
+    expect(orderNo.length).toBe(24);
+    const body = orderNo.slice(3);
+    expect(/^\d+$/.test(body)).toBe(true);
+    const parts = [
+      orderNo.slice(3, 16),
+      orderNo.slice(16, 24),
+    ];
+    parts.forEach((p) => expect(/^\d+$/.test(p)).toBe(true));
+  });
+
+
+
+  it('不同测试用例通过模块重加载获得独立的计数器状态', async () => {
+    const generateOrderNo1 = await getFreshGenerateOrderNo();
+    const orderNo1 = generateOrderNo1();
+    generateOrderNo1();
+    generateOrderNo1();
+    expect(Number(orderNo1.slice(16, 24))).toBe(0);
+    const generateOrderNo2 = await getFreshGenerateOrderNo();
+    const orderNo2 = generateOrderNo2();
+    expect(Number(orderNo2.slice(16, 24))).toBe(0);
   });
 });

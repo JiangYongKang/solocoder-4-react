@@ -1,0 +1,4 @@
+任务看板页面的拖拽排序在标签筛选激活时存在索引计算错误：
+1. 当用户激活标签筛选后，KanbanColumn 渲染的是筛选后的任务子集，data-task-index 反映子集中的位置索引。但 KanbanPage 中 handleTaskDrop 使用 groupTasksByColumn 获取的是全量任务列表，直接将从筛选视图中捕获的拖拽悬停索引用作全量列表的插入位置。例如某列有 4 个任务但筛选后只显示 2 个，用户拖拽到筛选视图末尾时 dragOverTaskIndex 为 2，handleTaskDrop 将其作为全量列表的插入索引 2 而非正确的全量位置。需要在 drop 计算时处理筛选视图索引与全量列表索引之间的映射。
+2. constants.js 中 PriorityOrder 的 export 定义仍被保留，但整个 kanban 目录下已没有任何文件导入该常量，它已成为死代码。需要清理该导出定义。
+3. 修复完成后重新运行 pnpm run test，需要让 kanban 相关的所有测试通过。

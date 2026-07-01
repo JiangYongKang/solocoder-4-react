@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { formatDuration, calculateProgress } from '../utils.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { calculateProgress, formatDuration } from '../utils.js'
 
 export default function VideoPlayer({
   lesson,
@@ -16,6 +16,7 @@ export default function VideoPlayer({
   const [playbackRate, setPlaybackRate] = useState(1)
   const intervalRef = useRef(null)
   const lastSaveRef = useRef(0)
+  const lastLessonIdRef = useRef(lesson?.id)
 
   useEffect(() => {
     lastSaveRef.current = Date.now()
@@ -41,9 +42,12 @@ export default function VideoPlayer({
   )
 
   useEffect(() => {
-    setCurrentTime(initialProgress?.currentTime || 0)
-    setIsPlaying(false)
-    setDuration(lesson?.duration || 0)
+    if (lesson?.id !== lastLessonIdRef.current) {
+      lastLessonIdRef.current = lesson?.id
+      setCurrentTime(initialProgress?.currentTime || 0)
+      setIsPlaying(false)
+      setDuration(lesson?.duration || 0)
+    }
   }, [lesson?.id, initialProgress, lesson?.duration])
 
   useEffect(() => {

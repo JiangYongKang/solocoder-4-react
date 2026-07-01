@@ -22,10 +22,4 @@ export const PriorityLabels = {
   [Priority.LOW]: '低优先级',
 }
 
-export const PriorityOrder = {
-  [Priority.HIGH]: 3,
-  [Priority.MEDIUM]: 2,
-  [Priority.LOW]: 1,
-}
-
 export const ColumnOrder = [ColumnIds.TODO, ColumnIds.IN_PROGRESS, ColumnIds.DONE]

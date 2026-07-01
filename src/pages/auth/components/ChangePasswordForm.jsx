@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { validateChangePasswordForm } from '../utils/validation'
 
 const ChangePasswordForm = ({ onSwitchTab }) => {
-  const { changePassword, isAuthenticated, user } = useAuth()
+  const { changePassword, isAuthenticated, user, logout } = useAuth()
   const [formData, setFormData] = useState({
     oldPassword: '',
     newPassword: '',
@@ -13,6 +13,8 @@ const ChangePasswordForm = ({ onSwitchTab }) => {
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [passwordLevel, setPasswordLevel] = useState(0)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   const getPasswordLevelText = (level) => {
     if (level <= 1) return { text: '弱', className: 'level-weak' }
@@ -53,10 +55,36 @@ const ChangePasswordForm = ({ onSwitchTab }) => {
       const result = await changePassword(formData.oldPassword, formData.newPassword)
       if (!result.success) {
         setSubmitError(result.message)
+      } else {
+        setIsSuccess(true)
+        setSuccessMessage(result.message)
       }
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="auth-success">
+        <div className="success-icon">✓</div>
+        <h3 className="success-title">密码修改成功</h3>
+        <p className="success-message">{successMessage}</p>
+        <p className="success-hint">
+          为了您的账号安全，请使用新密码重新登录。
+        </p>
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={() => {
+            logout()
+            onSwitchTab('login')
+          }}
+        >
+          去登录
+        </button>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {

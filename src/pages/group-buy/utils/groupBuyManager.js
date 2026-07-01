@@ -164,6 +164,8 @@ export const createOrder = (product, group, pickupPoint, userInfo, quantity = 1)
   const unitPrice = product.groupPrice
   const totalPrice = unitPrice * quantity
 
+  product.stock -= quantity
+
   const order = {
     id: orderId,
     productId: product.id,
@@ -180,7 +182,7 @@ export const createOrder = (product, group, pickupPoint, userInfo, quantity = 1)
     status: ORDER_STATUS.PAID,
     createdAt: Date.now(),
     pickupDeadline: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    remainingStock: product.stock - quantity
+    remainingStock: product.stock
   }
 
   return {
@@ -317,7 +319,7 @@ export const getSuccessfulGroups = (groups) => {
   return groups.filter(g => g.status === GROUP_STATUS.SUCCESS)
 }
 
-export const getLeaderNickname = (group, leaders) => {
+export const getLeaderNickname = (group) => {
   const leader = group.members.find(m => m.isLeader)
   return leader ? leader.nickname : '未知团长'
 }

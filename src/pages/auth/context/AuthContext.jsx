@@ -94,11 +94,10 @@ export const AuthProvider = ({ children }) => {
     }
     const updateResult = updateUserPassword(user.email, newPassword)
     if (updateResult.success) {
-      logout()
       return { success: true, message: '密码修改成功，请重新登录' }
     }
     return { success: false, message: updateResult.message }
-  }, [user, logout])
+  }, [user])
 
   const forgotPassword = useCallback(async (email) => {
     return requestPasswordReset(email)

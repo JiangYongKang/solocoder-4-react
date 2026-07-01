@@ -1,26 +1,26 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import CourseCatalog from './components/CourseCatalog.jsx'
-import VideoPlayer from './components/VideoPlayer.jsx'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ChapterQuiz from './components/ChapterQuiz.jsx'
-import StudyNotes from './components/StudyNotes.jsx'
+import CourseCatalog from './components/CourseCatalog.jsx'
 import LearningStats from './components/LearningStats.jsx'
-import { courseData, findLessonById, getNextLesson, getPrevLesson, findChapterByLessonId, getTotalLessons } from './mockData.js'
-import {
-  loadLearningState,
-  saveLearningState,
-  saveLessonProgress,
-  loadAllLessonProgress,
-  loadNotes,
-  saveNote,
-  deleteNote,
-  toggleNoteFavorite,
-  loadQuizResult,
-  saveQuizResult,
-  loadStats,
-  updateStats,
-  calculateCourseStats,
-} from './utils.js'
+import StudyNotes from './components/StudyNotes.jsx'
+import VideoPlayer from './components/VideoPlayer.jsx'
 import './CourseLearning.css'
+import { courseData, findChapterByLessonId, findLessonById, getNextLesson, getPrevLesson, getTotalLessons } from './mockData.js'
+import {
+    calculateCourseStats,
+    deleteNote,
+    loadAllLessonProgress,
+    loadLearningState,
+    loadNotes,
+    loadQuizResult,
+    loadStats,
+    saveLearningState,
+    saveLessonProgress,
+    saveNote,
+    saveQuizResult,
+    toggleNoteFavorite,
+    updateStats,
+} from './utils.js'
 
 const ACTIVE_TABS = ['video', 'quiz', 'notes', 'stats']
 
@@ -120,6 +120,7 @@ export default function CourseLearning() {
   useEffect(() => {
     const chapter = findChapterByLessonId(course, currentLessonId)
     if (chapter) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentChapterId(chapter.id)
       if (chapter.quiz) {
         const savedQuizResult = loadQuizResult(courseId, chapter.quiz.id)

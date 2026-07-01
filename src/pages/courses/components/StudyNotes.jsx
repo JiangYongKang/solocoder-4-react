@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function StudyNotes({
   lessonId,
@@ -16,6 +16,7 @@ export default function StudyNotes({
   const [filterFavorites, setFilterFavorites] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAdding(false)
     setEditingId(null)
     setNewNoteContent('')

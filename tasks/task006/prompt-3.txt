@@ -1,0 +1,4 @@
+机票查询页面的测试文件存在断言覆盖不足的问题：
+1. helpers.test.js 中 calculateOrderPrice 的测试用例"无选择航班有乘客不影响机票总价"仅验证了 flightTotal 为 0，修复后 taxTotal 和 insuranceTotal 也从非零变为了零，但测试未补充对这两个字段的断言。需要为该用例添加 expect(result.taxTotal).toBe(0) 和 expect(result.insuranceTotal).toBe(0)，确保税费计算的修复在边界场景有完整的回归验证。
+2. helpers.test.js 中 generateOrderNo 的测试用例"保证同毫秒内也不碰撞"没有 mock Date.now()，连续调用可能跨越不同毫秒，仅靠时间戳差异就足以区分不同订单号，无法验证计数器的作用。需要使用 vi.spyOn(Date, 'now').mockReturnValue 固定时间戳，在此前提下连续生成订单号校验唯一性，确保计数器在真正的同毫秒场景下有效。
+3. 修复完成后重新运行 pnpm run test，需要让 flights 相关的所有测试通过。

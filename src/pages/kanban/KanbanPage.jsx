@@ -27,6 +27,7 @@ export default function KanbanPage() {
   const [selectedTags, setSelectedTags] = useState([])
   const [draggingTaskId, setDraggingTaskId] = useState(null)
   const [dragOverTaskIndex, setDragOverTaskIndex] = useState(null)
+  const [dragOverColumnTasks, setDragOverColumnTasks] = useState(null)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState('add')
@@ -70,11 +71,41 @@ export default function KanbanPage() {
   const handleTaskDragEnd = useCallback(() => {
     setDraggingTaskId(null)
     setDragOverTaskIndex(null)
+    setDragOverColumnTasks(null)
   }, [])
 
-  const handleTaskDragOver = useCallback((_columnId, taskIndex) => {
+  const handleTaskDragOver = useCallback((_columnId, taskIndex, columnTasks) => {
     setDragOverTaskIndex(taskIndex)
+    setDragOverColumnTasks(columnTasks ?? null)
   }, [])
+
+  const mapFilteredIndexToFullIndex = (
+    filteredIndex,
+    filteredTasks,
+    fullTasks
+  ) => {
+    if (filteredIndex === null || filteredIndex === undefined) {
+      return fullTasks.length
+    }
+    if (!filteredTasks || filteredTasks.length === 0) {
+      return Math.min(Math.max(filteredIndex, 0), fullTasks.length)
+    }
+    if (filteredIndex <= 0) {
+      if (filteredTasks[0]) {
+        const idx = fullTasks.findIndex((t) => t.id === filteredTasks[0].id)
+        return idx === -1 ? 0 : idx
+      }
+      return 0
+    }
+    if (filteredIndex >= filteredTasks.length) {
+      const lastFiltered = filteredTasks[filteredTasks.length - 1]
+      const idx = fullTasks.findIndex((t) => t.id === lastFiltered.id)
+      return idx === -1 ? fullTasks.length : idx + 1
+    }
+    const anchorTask = filteredTasks[filteredIndex]
+    const idx = fullTasks.findIndex((t) => t.id === anchorTask.id)
+    return idx === -1 ? fullTasks.length : idx
+  }
 
   const handleTaskDrop = useCallback((dropData) => {
     const { taskId, columnId: srcColId, destColumnId } = dropData
@@ -87,9 +118,12 @@ export default function KanbanPage() {
       if (sourceIndex === -1) return prevTasks
 
       const destTasks = grouped[destColumnId]
-      const destIdx = dragOverTaskIndex !== null
-        ? Math.min(Math.max(dragOverTaskIndex, 0), destTasks.length)
-        : destTasks.length
+
+      const destIdx = mapFilteredIndexToFullIndex(
+        dragOverTaskIndex,
+        dragOverColumnTasks,
+        destTasks
+      )
 
       if (srcColId === destColumnId) {
         const adjustedDestIdx = destIdx > sourceIndex ? destIdx - 1 : destIdx
@@ -117,7 +151,7 @@ export default function KanbanPage() {
     })
 
     handleTaskDragEnd()
-  }, [dragOverTaskIndex, handleTaskDragEnd])
+  }, [dragOverTaskIndex, dragOverColumnTasks, handleTaskDragEnd])
 
   const handleAddTask = useCallback((columnId) => {
     setModalMode('add')

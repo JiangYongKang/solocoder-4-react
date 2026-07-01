@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { GROUP_STATUS_CONFIG } from '../types'
 import {
     calculateGroupProgress,
@@ -29,8 +29,8 @@ const GroupCard = ({ group, leaderInfo, product, onJoin, isCurrentUserIn }) => {
   const progress = calculateGroupProgress(group.members.length, group.minGroupSize)
   const remainingSlots = getRemainingSlots(group.members.length, group.minGroupSize)
   const canJoin = group.status === 'ongoing' && remainingSlots > 0 && !isCurrentUserIn
-  const groupLeader = group.members.find(m => m.isLeader)
-  const leaderNickname = getLeaderNickname(group)
+  const groupLeader = useMemo(() => group.members.find(m => m.isLeader), [group.members])
+  const leaderNickname = groupLeader ? groupLeader.nickname : '未知团长'
 
   return (
     <div className={`group-card ${group.status}`}>

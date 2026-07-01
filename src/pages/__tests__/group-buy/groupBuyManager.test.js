@@ -19,6 +19,7 @@ import {
     getAfterSaleStatusText,
     getGroupMemberCount,
     getGroupTimeRemaining,
+    getLeaderNickname,
     getOngoingGroups,
     getProductGroups,
     getRemainingSlots,
@@ -413,54 +414,86 @@ describe('groupBuyManager - Pickup Point Functions', () => {
 
 describe('groupBuyManager - Order Functions', () => {
   const validPickup = { ...MOCK_PICKUP_POINTS[0], status: PICKUP_POINT_STATUS.AVAILABLE }
-  const validProduct = MOCK_PRODUCTS[0]
   const validGroup = createMockGroup({ status: GROUP_STATUS.SUCCESS })
+
+  const createValidProduct = () => ({ ...MOCK_PRODUCTS[0] })
 
   describe('createOrder', () => {
     it('should create order successfully', () => {
-      const result = createOrder(validProduct, validGroup, validPickup, { id: 'user-1', nickname: '用户' }, 2)
+      const product = createValidProduct()
+      const result = createOrder(product, validGroup, validPickup, { id: 'user-1', nickname: '用户' }, 2)
 
       expect(result.success).toBe(true)
       expect(result.order).toBeDefined()
       expect(result.order.id).toMatch(/^GB/)
       expect(result.order.verificationCode).toMatch(/^[0-9A-Z]{8}$/)
       expect(result.order.quantity).toBe(2)
-      expect(result.order.unitPrice).toBe(validProduct.groupPrice)
-      expect(result.order.totalPrice).toBeCloseTo(validProduct.groupPrice * 2)
+      expect(result.order.unitPrice).toBe(product.groupPrice)
+      expect(result.order.totalPrice).toBeCloseTo(product.groupPrice * 2)
       expect(result.order.status).toBe(ORDER_STATUS.PAID)
       expect(result.order.pickupPoint.id).toBe(validPickup.id)
     })
 
+    it('should deduct product stock after successful order', () => {
+      const product = createValidProduct()
+      const initialStock = product.stock
+      const result = createOrder(product, validGroup, validPickup, { id: 'user-1', nickname: '用户' }, 2)
+
+      expect(result.success).toBe(true)
+      expect(product.stock).toBe(initialStock - 2)
+      expect(result.order.remainingStock).toBe(initialStock - 2)
+    })
+
+    it('should enforce stock limit across consecutive orders', () => {
+      const product = { ...createValidProduct(), stock: 5 }
+
+      const result1 = createOrder(product, validGroup, validPickup, { id: 'u1' }, 2)
+      expect(result1.success).toBe(true)
+      expect(product.stock).toBe(3)
+
+      const result2 = createOrder(product, validGroup, validPickup, { id: 'u2' }, 2)
+      expect(result2.success).toBe(true)
+      expect(product.stock).toBe(1)
+
+      const result3 = createOrder(product, validGroup, validPickup, { id: 'u3' }, 2)
+      expect(result3.success).toBe(false)
+      expect(result3.message).toContain('库存不足')
+      expect(product.stock).toBe(1)
+    })
+
     it('should fail with invalid pickup point', () => {
-      const result = createOrder(validProduct, validGroup, { status: PICKUP_POINT_STATUS.CLOSED }, {})
+      const product = createValidProduct()
+      const result = createOrder(product, validGroup, { status: PICKUP_POINT_STATUS.CLOSED }, {})
       expect(result.success).toBe(false)
       expect(result.message).toBeDefined()
     })
 
     it('should fail with failed/ended group', () => {
+      const product = createValidProduct()
       const failedGroup = createMockGroup({ status: GROUP_STATUS.FAILED })
-      const result = createOrder(validProduct, failedGroup, validPickup, {})
+      const result = createOrder(product, failedGroup, validPickup, {})
       expect(result.success).toBe(false)
     })
 
     it('should fail when quantity is zero or negative', () => {
-      const result1 = createOrder(validProduct, validGroup, validPickup, {}, 0)
+      const product = createValidProduct()
+      const result1 = createOrder(product, validGroup, validPickup, {}, 0)
       expect(result1.success).toBe(false)
       expect(result1.message).toContain('大于0')
 
-      const result2 = createOrder(validProduct, validGroup, validPickup, {}, -5)
+      const result2 = createOrder(product, validGroup, validPickup, {}, -5)
       expect(result2.success).toBe(false)
     })
 
     it('should fail when product stock is zero', () => {
-      const noStockProduct = { ...validProduct, stock: 0 }
+      const noStockProduct = { ...createValidProduct(), stock: 0 }
       const result = createOrder(noStockProduct, validGroup, validPickup, {}, 1)
       expect(result.success).toBe(false)
       expect(result.message).toContain('售罄')
     })
 
     it('should fail when quantity exceeds stock', () => {
-      const lowStockProduct = { ...validProduct, stock: 3 }
+      const lowStockProduct = { ...createValidProduct(), stock: 3 }
       const result = createOrder(lowStockProduct, validGroup, validPickup, {}, 5)
       expect(result.success).toBe(false)
       expect(result.message).toContain('库存不足')
@@ -468,7 +501,7 @@ describe('groupBuyManager - Order Functions', () => {
     })
 
     it('should calculate remaining stock correctly after order', () => {
-      const stockProduct = { ...validProduct, stock: 10 }
+      const stockProduct = { ...createValidProduct(), stock: 10 }
       const result = createOrder(stockProduct, validGroup, validPickup, {}, 3)
       expect(result.success).toBe(true)
       expect(result.order.remainingStock).toBe(7)
@@ -621,6 +654,32 @@ describe('groupBuyManager - Group Query Functions', () => {
       successful.forEach(g => {
         expect(g.status).toBe(GROUP_STATUS.SUCCESS)
       })
+    })
+  })
+
+  describe('getLeaderNickname', () => {
+    it('should return leader nickname from group members', () => {
+      const group = createMockGroup({
+        members: [
+          { id: 'mem-1', isLeader: true, nickname: '团长张三', joinTime: Date.now() },
+          { id: 'mem-2', isLeader: false, nickname: '团员李四', joinTime: Date.now() }
+        ]
+      })
+      expect(getLeaderNickname(group)).toBe('团长张三')
+    })
+
+    it('should return default text when no leader found', () => {
+      const group = createMockGroup({
+        members: [
+          { id: 'mem-1', isLeader: false, nickname: '普通用户', joinTime: Date.now() }
+        ]
+      })
+      expect(getLeaderNickname(group)).toBe('未知团长')
+    })
+
+    it('should handle empty members array', () => {
+      const group = createMockGroup({ members: [] })
+      expect(getLeaderNickname(group)).toBe('未知团长')
     })
   })
 

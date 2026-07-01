@@ -118,11 +118,8 @@ export function formatDate(dateStr) {
 
 let orderNoCounter = 0;
 let orderNoLastTimestamp = 0;
-
-export function resetOrderNoCounter() {
-  orderNoCounter = 0;
-  orderNoLastTimestamp = 0;
-}
+const MAX_ORDER_COUNTER = 99999999;
+const ORDER_COUNTER_LENGTH = 8;
 
 export function generateOrderNo() {
   const now = Date.now();
@@ -130,12 +127,14 @@ export function generateOrderNo() {
     orderNoCounter = 0;
     orderNoLastTimestamp = now;
   } else {
-    orderNoCounter = (orderNoCounter + 1) % 10000;
+    if (orderNoCounter >= MAX_ORDER_COUNTER) {
+      throw new Error(
+        'Order number counter overflow: more than 100 million orders generated in the same millisecond'
+      );
+    }
+    orderNoCounter += 1;
   }
   const timestamp = now.toString();
-  const counter = orderNoCounter.toString().padStart(4, '0');
-  const random = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, '0');
-  return `HTL${timestamp}${counter}${random}`;
+  const counter = orderNoCounter.toString().padStart(ORDER_COUNTER_LENGTH, '0');
+  return `HTL${timestamp}${counter}`;
 }

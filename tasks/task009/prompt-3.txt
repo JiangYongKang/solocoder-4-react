@@ -1,0 +1,5 @@
+生鲜团购页面存在运行时错误和逻辑不完整的问题：
+1. GroupBuy.jsx 的 handleViewGroups 回调中调用了 getSuccessfulGroups 函数来筛选已成功的拼团，但文件顶部 import 语句中缺少该函数的导入，运行时抛出 ReferenceError 导致整个拼团列表弹窗崩溃。需要在 import 中添加 getSuccessfulGroups。
+2. GroupCard.jsx 中新增了 getLeaderNickname 函数调用，但 import 语句同样遗漏了该函数的导入，运行时抛出 ReferenceError 导致团购卡片组件渲染失败。另外 getLeaderNickname 函数签名中的 leaders 形参在函数体内从未被使用，属于死参数，需要清理。GroupCard 组件内部先用 find 获取 groupLeader，紧接着又在 getLeaderNickname 内部重复执行相同逻辑的 find 操作，存在重复计算，应合并为一次查找。
+3. createOrder 函数新增了库存检查逻辑，在数量超出库存时拒绝下单，但下单成功后 product.stock 并未被实际扣减。多个用户连续下单时，只要内存中 product.stock 值不变，库存检查就没有实质性约束，用户仍然可以反复下单超出库存上限。需要在成功下单后扣减 product.stock。
+4. 修复完成后重新运行 pnpm run test，需要让 group-buy 相关的所有测试通过。

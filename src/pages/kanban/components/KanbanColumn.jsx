@@ -38,7 +38,7 @@ export default function KanbanColumn({
       }
     }
     if (onTaskDragOver) {
-      onTaskDragOver(columnId, overIndex)
+      onTaskDragOver(columnId, overIndex, tasks)
     }
   }
 
