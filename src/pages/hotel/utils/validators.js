@@ -116,10 +116,26 @@ export function formatDate(dateStr) {
   return `${year}-${month}-${day}`;
 }
 
+let orderNoCounter = 0;
+let orderNoLastTimestamp = 0;
+
+export function resetOrderNoCounter() {
+  orderNoCounter = 0;
+  orderNoLastTimestamp = 0;
+}
+
 export function generateOrderNo() {
-  const timestamp = Date.now().toString();
+  const now = Date.now();
+  if (now !== orderNoLastTimestamp) {
+    orderNoCounter = 0;
+    orderNoLastTimestamp = now;
+  } else {
+    orderNoCounter = (orderNoCounter + 1) % 10000;
+  }
+  const timestamp = now.toString();
+  const counter = orderNoCounter.toString().padStart(4, '0');
   const random = Math.floor(Math.random() * 10000)
     .toString()
     .padStart(4, '0');
-  return `HTL${timestamp}${random}`;
+  return `HTL${timestamp}${counter}${random}`;
 }

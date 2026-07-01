@@ -1,0 +1,6 @@
+你实现的生鲜团购页面还存在一些问题，需要进行修复：
+1. ProductCard 被包裹在带有 onClick 事件的外层容器中，但卡片内部"发起新团"和"去参团"按钮的点击事件没有阻止冒泡。用户点击这些按钮时，事件会冒泡到外层容器同时触发打开拼团列表弹窗，导致订单确认弹窗和拼团列表弹窗同时叠加显示在屏幕上。需要修复事件层级关系避免弹窗叠加。
+2. GroupBuy.css 中 .pickup-point-name-row 选择器在文件中被重复定义了两次，第二个定义覆盖了第一个定义中的 flex 和 margin 属性，导致提货点选择器中卡片头部的布局失效。需要合并重复样式定义。
+3. createNewGroup 和 joinGroup 函数使用 Date.now() 加 Math.random() 拼接生成成员 ID 和团 ID，高并发场景下存在随机数碰撞风险，不同团之间可能生成相同的成员 ID。另外 createOrder 函数接收了 quantity 参数但完全忽略了 product.stock 库存上限，用户可以下单超出库存的数量。需要使用可靠的方式保证 ID 唯一，并在下单前检查库存上限。
+4. groupBuyManager 中导出的 getLeaderNickname 和 getSuccessfulGroups 函数仅在测试文件中被使用，生产代码中 GroupCard 直接使用 members[0] 获取团长信息而未调用 getLeaderNickname。需要将辅助函数与 UI 组件正确集成，或清理未被生产代码引用的死代码。
+5. 修复完成后重新运行 pnpm run test，需要让 group-buy 相关的所有测试通过。

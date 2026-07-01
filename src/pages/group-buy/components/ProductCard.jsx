@@ -1,5 +1,5 @@
 import { PRODUCT_STATUS_CONFIG } from '../types'
-import { formatPrice, calculateGroupProgress, getRemainingSlots } from '../utils/groupBuyManager'
+import { calculateGroupProgress, formatPrice, getRemainingSlots } from '../utils/groupBuyManager'
 
 const ProductCard = ({ product, ongoingGroups = [], onStartGroup, onJoinGroup }) => {
   const statusConfig = PRODUCT_STATUS_CONFIG[product.status]
@@ -14,6 +14,20 @@ const ProductCard = ({ product, ongoingGroups = [], onStartGroup, onJoinGroup })
   const discountPercent = Math.round((1 - product.groupPrice / product.originalPrice) * 100)
 
   const isSoldOut = product.status !== 'on_sale'
+
+  const handleStartGroup = (e) => {
+    e.stopPropagation()
+    if (!isSoldOut && onStartGroup) {
+      onStartGroup(product)
+    }
+  }
+
+  const handleJoinGroup = (e) => {
+    e.stopPropagation()
+    if (!isSoldOut && nearestGroup && onJoinGroup) {
+      onJoinGroup(product, nearestGroup)
+    }
+  }
 
   return (
     <div className={`product-card ${isSoldOut ? 'sold-out' : ''}`}>
@@ -63,14 +77,14 @@ const ProductCard = ({ product, ongoingGroups = [], onStartGroup, onJoinGroup })
         <div className="product-actions">
           <button
             className="btn btn-secondary btn-small"
-            onClick={() => !isSoldOut && onStartGroup && onStartGroup(product)}
+            onClick={handleStartGroup}
             disabled={isSoldOut}
           >
             发起新团
           </button>
           <button
             className={`btn btn-primary btn-small ${isSoldOut ? 'disabled' : ''}`}
-            onClick={() => !isSoldOut && nearestGroup && onJoinGroup && onJoinGroup(product, nearestGroup)}
+            onClick={handleJoinGroup}
             disabled={isSoldOut || !nearestGroup}
           >
             {nearestGroup ? '去参团' : '暂无拼团'}

@@ -4,7 +4,7 @@ export const courseData = {
   description: '从零开始学习 React 19，掌握现代前端开发技能',
   instructor: '张老师',
   cover: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=react%20programming%20course%20cover&image_size=landscape_16_9',
-  totalDuration: 12600,
+  totalDuration: 16800,
   chapters: [
     {
       id: 'chapter-1',
@@ -240,7 +240,7 @@ export function findChapterByLessonId(course, lessonId) {
 export function getNextLesson(course, currentLessonId) {
   const allLessons = course.chapters.flatMap((ch) => ch.lessons)
   const currentIndex = allLessons.findIndex((l) => l.id === currentLessonId)
-  if (currentIndex < allLessons.length - 1) {
+  if (currentIndex >= 0 && currentIndex < allLessons.length - 1) {
     return allLessons[currentIndex + 1]
   }
   return null

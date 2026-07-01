@@ -1,7 +1,8 @@
 import { formatPrice } from '../utils/cartManager'
 
-const OrderResult = ({ visible, order, status, onClose, onNewOrder }) => {
-  if (!visible || !order) return null
+const OrderResult = ({ visible, order, status, errorMessage, onClose, onNewOrder }) => {
+  if (!visible) return null
+  if (status !== 'failed' && !order) return null
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp)
@@ -114,7 +115,7 @@ const OrderResult = ({ visible, order, status, onClose, onNewOrder }) => {
           <>
             <div className="result-icon failed">✕</div>
             <h2 className="result-title">下单失败</h2>
-            <p className="result-subtitle">请稍后重试</p>
+            <p className="result-subtitle">{errorMessage || '请稍后重试'}</p>
             <div className="result-actions">
               <button className="btn btn-primary" onClick={onClose}>
                 知道了

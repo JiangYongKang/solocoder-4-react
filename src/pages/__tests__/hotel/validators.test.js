@@ -7,6 +7,7 @@ import {
   filterRooms,
   formatDate,
   generateOrderNo,
+  resetOrderNoCounter,
 } from '../../hotel/utils/validators';
 
 describe('validateSearchParams - 搜索参数验证', () => {
@@ -440,6 +441,10 @@ describe('formatDate - 日期格式化', () => {
 });
 
 describe('generateOrderNo - 订单号生成', () => {
+  beforeEach(() => {
+    resetOrderNoCounter();
+  });
+
   it('订单号以HTL开头', () => {
     const orderNo = generateOrderNo();
     expect(orderNo.startsWith('HTL')).toBe(true);
@@ -454,9 +459,46 @@ describe('generateOrderNo - 订单号生成', () => {
     expect(timestampPart).toBeLessThanOrEqual(after + 1000);
   });
 
-  it('订单号长度固定', () => {
+  it('订单号长度固定（HTL + 13位时间戳 + 4位计数器 + 4位随机数）', () => {
     const orderNo = generateOrderNo();
-    expect(orderNo.length).toBe(3 + 13 + 4);
+    expect(orderNo.length).toBe(3 + 13 + 4 + 4);
+  });
+
+  it('订单号包含计数器部分，连续生成时递增', () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    resetOrderNoCounter();
+    try {
+      const orderNo1 = generateOrderNo();
+      const orderNo2 = generateOrderNo();
+      const orderNo3 = generateOrderNo();
+      const counter1 = Number(orderNo1.slice(16, 20));
+      const counter2 = Number(orderNo2.slice(16, 20));
+      const counter3 = Number(orderNo3.slice(16, 20));
+      expect(counter1).toBe(0);
+      expect(counter2).toBe(1);
+      expect(counter3).toBe(2);
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('时间戳变化时计数器重置为0', () => {
+    const originalNow = Date.now;
+    try {
+      Date.now = () => 1700000000000;
+      resetOrderNoCounter();
+      const orderNo1 = generateOrderNo();
+      const orderNo2 = generateOrderNo();
+      expect(Number(orderNo1.slice(16, 20))).toBe(0);
+      expect(Number(orderNo2.slice(16, 20))).toBe(1);
+      Date.now = () => 1700000000001;
+      const orderNo3 = generateOrderNo();
+      expect(Number(orderNo3.slice(16, 20))).toBe(0);
+    } finally {
+      Date.now = originalNow;
+    }
   });
 
   it('生成的订单号不重复（连续100次）', () => {
@@ -465,5 +507,96 @@ describe('generateOrderNo - 订单号生成', () => {
       set.add(generateOrderNo());
     }
     expect(set.size).toBe(100);
+  });
+
+  it('生成的订单号不重复（连续1000次）', () => {
+    const set = new Set();
+    for (let i = 0; i < 1000; i++) {
+      set.add(generateOrderNo());
+    }
+    expect(set.size).toBe(1000);
+  });
+
+  it('同一毫秒内生成10000个订单号不重复（模拟高并发）', () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    resetOrderNoCounter();
+    try {
+      const set = new Set();
+      for (let i = 0; i < 10000; i++) {
+        set.add(generateOrderNo());
+      }
+      expect(set.size).toBe(10000);
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('同一毫秒内连续生成的订单号计数器部分严格递增', () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    resetOrderNoCounter();
+    try {
+      const counters = [];
+      for (let i = 0; i < 100; i++) {
+        const orderNo = generateOrderNo();
+        counters.push(Number(orderNo.slice(16, 20)));
+      }
+      for (let i = 0; i < 100; i++) {
+        expect(counters[i]).toBe(i);
+      }
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('不同毫秒生成的订单号时间戳部分不同', () => {
+    const originalNow = Date.now;
+    try {
+      Date.now = () => 1700000000000;
+      resetOrderNoCounter();
+      const orderNo1 = generateOrderNo();
+      Date.now = () => 1700000000001;
+      const orderNo2 = generateOrderNo();
+      expect(orderNo1.slice(3, 16)).not.toBe(orderNo2.slice(3, 16));
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('计数器达到9999后模运算归零（边界测试）', () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    resetOrderNoCounter();
+    try {
+      let lastOrderNo;
+      for (let i = 0; i <= 10000; i++) {
+        lastOrderNo = generateOrderNo();
+      }
+      const counter = Number(lastOrderNo.slice(16, 20));
+      expect(counter).toBe(0);
+    } finally {
+      Date.now = originalNow;
+    }
+  });
+
+  it('resetOrderNoCounter可以重置计数器状态', () => {
+    const mockNow = 1700000000000;
+    const originalNow = Date.now;
+    Date.now = () => mockNow;
+    try {
+      generateOrderNo();
+      generateOrderNo();
+      const orderNoBefore = generateOrderNo();
+      expect(Number(orderNoBefore.slice(16, 20))).toBe(2);
+      resetOrderNoCounter();
+      const orderNoAfter = generateOrderNo();
+      expect(Number(orderNoAfter.slice(16, 20))).toBe(0);
+    } finally {
+      Date.now = originalNow;
+    }
   });
 });

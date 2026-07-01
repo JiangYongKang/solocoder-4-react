@@ -12,11 +12,10 @@ export default function VideoPlayer({
 }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(() => initialProgress?.currentTime || 0)
-  const [duration] = useState(lesson?.duration || 0)
+  const [duration, setDuration] = useState(lesson?.duration || 0)
   const [playbackRate, setPlaybackRate] = useState(1)
   const intervalRef = useRef(null)
   const lastSaveRef = useRef(0)
-  const lastLessonIdRef = useRef(lesson?.id)
 
   useEffect(() => {
     lastSaveRef.current = Date.now()
@@ -42,15 +41,10 @@ export default function VideoPlayer({
   )
 
   useEffect(() => {
-    if (lesson?.id !== lastLessonIdRef.current) {
-      lastLessonIdRef.current = lesson?.id
-      const timer = setTimeout(() => {
-        setCurrentTime(initialProgress?.currentTime || 0)
-        setIsPlaying(false)
-      }, 0)
-      return () => clearTimeout(timer)
-    }
-  }, [lesson?.id, initialProgress])
+    setCurrentTime(initialProgress?.currentTime || 0)
+    setIsPlaying(false)
+    setDuration(lesson?.duration || 0)
+  }, [lesson?.id, initialProgress, lesson?.duration])
 
   useEffect(() => {
     if (isPlaying) {

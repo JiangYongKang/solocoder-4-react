@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AFTER_SALE_REASONS, AFTER_SALE_STATUS_CONFIG } from '../types'
-import { formatPrice, getAfterSaleStatusText, formatDate } from '../utils/groupBuyManager'
+import { formatDate, formatPrice, getAfterSaleStatusText } from '../utils/groupBuyManager'
 
 const AfterSaleForm = ({ order, onSubmit, onClose }) => {
   const [selectedReason, setSelectedReason] = useState(null)
@@ -224,4 +224,5 @@ const AfterSaleDetail = ({ afterSale, onClose }) => {
   )
 }
 
-export { AfterSaleForm, AfterSaleDetail }
+export { AfterSaleDetail, AfterSaleForm }
+

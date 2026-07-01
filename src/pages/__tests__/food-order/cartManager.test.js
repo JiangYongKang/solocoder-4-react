@@ -1,26 +1,27 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { MOCK_ADDRESSES, MOCK_DISCOUNT_RULES, MOCK_PRODUCTS } from '../../food-order/data/mockData'
+import { ORDER_STATUS } from '../../food-order/types'
 import {
-  generateCartItemId,
-  calculateSpecPrice,
-  calculateCartItemPrice,
-  buildSpecDescription,
-  buildFullProductName,
-  addToCart,
-  updateCartItemQuantity,
-  removeFromCart,
-  clearCart,
-  calculateSubtotal,
-  calculateTotalItems,
-  findApplicableDiscount,
-  calculateDiscount,
-  calculateTotalPrice,
-  canCheckout,
-  validateSpecSelection,
-  getDefaultSpecSelection,
-  submitOrder,
-  formatPrice
+    addToCart,
+    buildFullProductName,
+    buildSpecDescription,
+    calculateCartItemPrice,
+    calculateDiscount,
+    calculateSpecPrice,
+    calculateSubtotal,
+    calculateTotalItems,
+    calculateTotalPrice,
+    canCheckout,
+    clearCart,
+    findApplicableDiscount,
+    formatPrice,
+    generateCartItemId,
+    getDefaultSpecSelection,
+    removeFromCart,
+    submitOrder,
+    updateCartItemQuantity,
+    validateSpecSelection
 } from '../../food-order/utils/cartManager'
-import { MOCK_DISCOUNT_RULES, MOCK_PRODUCTS, MOCK_ADDRESSES } from '../../food-order/data/mockData'
 
 const productWithoutSpecs = MOCK_PRODUCTS.find((p) => !p.hasSpecs && !p.soldOut)
 const productWithSpecs = MOCK_PRODUCTS.find((p) => p.hasSpecs && !p.soldOut)
@@ -53,6 +54,30 @@ describe('cartManager', () => {
     it('should handle null specs', () => {
       const id = generateCartItemId('prod-1', null)
       expect(id).toContain('prod-1')
+    })
+
+    it('should not include trailing separator when specs are empty', () => {
+      const id = generateCartItemId('prod-1', {})
+      expect(id).toBe('prod-1')
+      expect(id).not.toContain('|')
+    })
+
+    it('should not include trailing separator when specs is null', () => {
+      const id = generateCartItemId('prod-1', null)
+      expect(id).toBe('prod-1')
+      expect(id).not.toContain('|')
+    })
+
+    it('should not include trailing separator when specs is undefined', () => {
+      const id = generateCartItemId('prod-1', undefined)
+      expect(id).toBe('prod-1')
+      expect(id).not.toContain('|')
+    })
+
+    it('should filter out empty array specs', () => {
+      const id = generateCartItemId('prod-1', { 'spec-group-1': [] })
+      expect(id).toBe('prod-1')
+      expect(id).not.toContain('|')
     })
   })
 
@@ -308,6 +333,20 @@ describe('cartManager', () => {
       expect(result.minAmount).toBe(20)
       expect(result.discount).toBe(5)
     })
+
+    it('should not mutate the original discount rules array', () => {
+      const originalRules = [
+        { minAmount: 40, discount: 12 },
+        { minAmount: 20, discount: 5 },
+        { minAmount: 60, discount: 20 }
+      ]
+      const originalOrder = originalRules.map(r => r.minAmount)
+      
+      findApplicableDiscount(50, originalRules)
+      
+      const afterOrder = originalRules.map(r => r.minAmount)
+      expect(afterOrder).toEqual(originalOrder)
+    })
   })
 
   describe('calculateDiscount', () => {
@@ -493,6 +532,7 @@ describe('cartManager', () => {
       expect(result.order.priceDetail.subtotal).toBe(subtotal)
       expect(result.order.priceDetail.discount).toBe(discount)
       expect(result.order.priceDetail.total).toBe(total)
+      expect(result.order.status).toBe(ORDER_STATUS.PENDING)
     })
   })
 

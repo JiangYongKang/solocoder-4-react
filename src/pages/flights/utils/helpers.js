@@ -111,14 +111,15 @@ export const SORT_OPTIONS = [
 
 export const calculateOrderPrice = (selections, passengers) => {
   const perPersonTax = TAX_RATE.fuel + TAX_RATE.airport
-  const flightTotal = selections.reduce((sum, sel) => {
-    if (sel.flight && sel.cabin) {
-      return sum + sel.cabin.price * passengers.length
-    }
-    return sum
+  const validSelections = selections.filter(sel => sel.flight && sel.cabin)
+  const validCount = validSelections.length
+  const passengerCount = passengers.length
+
+  const flightTotal = validSelections.reduce((sum, sel) => {
+    return sum + sel.cabin.price * passengerCount
   }, 0)
-  const taxTotal = perPersonTax * selections.length * passengers.length
-  const insuranceTotal = TAX_RATE.insurance * passengers.length * selections.length
+  const taxTotal = perPersonTax * validCount * passengerCount
+  const insuranceTotal = TAX_RATE.insurance * passengerCount * validCount
   const total = flightTotal + taxTotal + insuranceTotal
 
   return {
@@ -126,6 +127,7 @@ export const calculateOrderPrice = (selections, passengers) => {
     taxTotal,
     insuranceTotal,
     perPersonTax,
+    validSelectionCount: validCount,
     fuelTax: TAX_RATE.fuel,
     airportTax: TAX_RATE.airport,
     insurancePerPerson: TAX_RATE.insurance,
@@ -133,8 +135,11 @@ export const calculateOrderPrice = (selections, passengers) => {
   }
 }
 
+let _orderCounter = 0
 export const generateOrderNo = () => {
+  _orderCounter = (_orderCounter + 1) % 1000000
   const timestamp = Date.now().toString()
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-  return 'FL' + timestamp + random
+  const counter = _orderCounter.toString().padStart(6, '0')
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+  return 'FL' + timestamp + counter + random
 }

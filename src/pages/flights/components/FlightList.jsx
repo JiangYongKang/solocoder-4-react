@@ -27,8 +27,8 @@ function FlightList({
     .map(code => AIRLINES.find(a => a.code === code) || { code, name: code, logo: code })
 
   const allPrices = flights.flatMap(f => f.cabins.map(c => c.price))
-  const minPrice = Math.min(...allPrices)
-  const maxPrice = Math.max(...allPrices)
+  const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0
+  const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 0
 
   return (
     <div className="flight-list-container">

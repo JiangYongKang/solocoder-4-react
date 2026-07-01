@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { validateRegisterForm } from '../utils/validation'
 
 const RegisterForm = ({ onSwitchTab }) => {
-  const { register, isAuthenticated } = useAuth()
+  const { register, isAuthenticated, user, logout } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -62,8 +62,47 @@ const RegisterForm = ({ onSwitchTab }) => {
     }
   }
 
-  if (isAuthenticated) {
-    return null
+  if (isAuthenticated && user) {
+    return (
+      <div className="auth-success">
+        <div className="success-icon">✓</div>
+        <h3 className="success-title">已注册并登录</h3>
+        <div className="user-info-card">
+          <div className="user-info-row">
+            <span className="user-info-label">昵称：</span>
+            <span className="user-info-value">{user.nickname}</span>
+          </div>
+          <div className="user-info-row">
+            <span className="user-info-label">邮箱：</span>
+            <span className="user-info-value">{user.email}</span>
+          </div>
+          <div className="user-info-row">
+            <span className="user-info-label">注册时间：</span>
+            <span className="user-info-value">
+              {new Date(user.createdAt).toLocaleString()}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => onSwitchTab('change')}
+            style={{ flex: 1 }}
+          >
+            修改密码
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={logout}
+            style={{ flex: 1 }}
+          >
+            退出登录
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const levelInfo = getPasswordLevelText(passwordLevel)

@@ -1,4 +1,4 @@
-import { PRODUCT_STATUS, GROUP_STATUS, PICKUP_POINT_STATUS } from '../types'
+import { GROUP_STATUS, PICKUP_POINT_STATUS, PRODUCT_STATUS } from '../types'
 
 const TWO_HOURS = 2 * 60 * 60 * 1000
 const ONE_HOUR = 60 * 60 * 1000

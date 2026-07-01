@@ -1,36 +1,36 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
-import {
-  MOCK_CATEGORIES,
-  MOCK_PRODUCTS,
-  MOCK_DISCOUNT_RULES,
-  MOCK_ADDRESSES,
-  MOCK_STORE_INFO
-} from './data/mockData'
-import {
-  addToCart,
-  updateCartItemQuantity,
-  removeFromCart,
-  clearCart,
-  calculateSubtotal,
-  calculateDiscount,
-  calculateTotalPrice,
-  findApplicableDiscount,
-  canCheckout,
-  submitOrder,
-  formatPrice
-} from './utils/cartManager'
-import { ORDER_STATUS } from './types'
-import CategoryBar from './components/CategoryBar'
-import ProductList from './components/ProductList'
-import SpecSelector from './components/SpecSelector'
-import CartPanel from './components/CartPanel'
-import CheckoutBar from './components/CheckoutBar'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import AddressDisplay from './components/AddressDisplay'
 import AddressSelector from './components/AddressSelector'
+import CartPanel from './components/CartPanel'
+import CategoryBar from './components/CategoryBar'
+import CheckoutBar from './components/CheckoutBar'
 import OrderRemark from './components/OrderRemark'
 import OrderResult from './components/OrderResult'
 import PriceDetail from './components/PriceDetail'
+import ProductList from './components/ProductList'
+import SpecSelector from './components/SpecSelector'
+import {
+    MOCK_ADDRESSES,
+    MOCK_CATEGORIES,
+    MOCK_DISCOUNT_RULES,
+    MOCK_PRODUCTS,
+    MOCK_STORE_INFO
+} from './data/mockData'
 import './FoodOrder.css'
+import { ORDER_STATUS } from './types'
+import {
+    addToCart,
+    calculateDiscount,
+    calculateSubtotal,
+    calculateTotalPrice,
+    canCheckout,
+    clearCart,
+    findApplicableDiscount,
+    formatPrice,
+    removeFromCart,
+    submitOrder,
+    updateCartItemQuantity
+} from './utils/cartManager'
 
 const FoodOrder = () => {
   const [categories] = useState(MOCK_CATEGORIES)
@@ -53,6 +53,7 @@ const FoodOrder = () => {
   const [showOrderResult, setShowOrderResult] = useState(false)
   const [orderResult, setOrderResult] = useState(null)
   const [orderStatus, setOrderStatus] = useState(ORDER_STATUS.PENDING)
+  const [orderErrorMessage, setOrderErrorMessage] = useState('')
   const [showCheckout, setShowCheckout] = useState(false)
 
   const categoryRefs = useRef({})
@@ -135,13 +136,16 @@ const FoodOrder = () => {
       if (result.success) {
         setOrderResult(result.order)
         setOrderStatus(ORDER_STATUS.SUCCESS)
+        setOrderErrorMessage('')
         setShowOrderResult(true)
         setShowCheckout(false)
         setCart(clearCart())
         setOrderRemark('')
       } else {
+        setOrderResult(null)
         setOrderStatus(ORDER_STATUS.FAILED)
-        alert(result.message)
+        setOrderErrorMessage(result.message)
+        setShowOrderResult(true)
       }
     }, 1000)
   }, [cart, selectedAddress, orderRemark, subtotal, discount, storeInfo.deliveryFee, total])
@@ -150,6 +154,7 @@ const FoodOrder = () => {
     setShowOrderResult(false)
     setOrderResult(null)
     setOrderStatus(ORDER_STATUS.PENDING)
+    setOrderErrorMessage('')
   }, [])
 
   const nextDiscount = useMemo(() => {
@@ -314,8 +319,14 @@ const FoodOrder = () => {
       <OrderResult
         visible={showOrderResult}
         order={orderResult}
-        status={orderStatus === ORDER_STATUS.SUCCESS ? 'success' : 'failed'}
-        onClose={() => setShowOrderResult(false)}
+        status={orderStatus === ORDER_STATUS.SUCCESS ? 'success' : orderStatus === ORDER_STATUS.FAILED ? 'failed' : 'success'}
+        errorMessage={orderErrorMessage}
+        onClose={() => {
+          setShowOrderResult(false)
+          if (orderStatus === ORDER_STATUS.FAILED) {
+            setOrderStatus(ORDER_STATUS.PENDING)
+          }
+        }}
         onNewOrder={handleNewOrder}
       />
     </div>

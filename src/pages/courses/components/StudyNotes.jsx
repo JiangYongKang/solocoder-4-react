@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function StudyNotes({
   lessonId,
@@ -14,19 +14,12 @@ export default function StudyNotes({
   const [newNoteContent, setNewNoteContent] = useState('')
   const [editContent, setEditContent] = useState('')
   const [filterFavorites, setFilterFavorites] = useState(false)
-  const lastLessonIdRef = useRef(lessonId)
 
   useEffect(() => {
-    if (lessonId !== lastLessonIdRef.current) {
-      lastLessonIdRef.current = lessonId
-      const timer = setTimeout(() => {
-        setIsAdding(false)
-        setEditingId(null)
-        setNewNoteContent('')
-        setEditContent('')
-      }, 0)
-      return () => clearTimeout(timer)
-    }
+    setIsAdding(false)
+    setEditingId(null)
+    setNewNoteContent('')
+    setEditContent('')
   }, [lessonId])
 
   if (!lessonId) {

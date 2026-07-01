@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { validateForgotPasswordForm } from '../utils/validation'
 
 const ForgotPasswordForm = ({ onSwitchTab }) => {
-  const { forgotPassword, isAuthenticated } = useAuth()
+  const { forgotPassword, isAuthenticated, user, logout } = useAuth()
   const [formData, setFormData] = useState({ email: '' })
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -46,8 +46,35 @@ const ForgotPasswordForm = ({ onSwitchTab }) => {
     }
   }
 
-  if (isAuthenticated) {
-    return null
+  if (isAuthenticated && user) {
+    return (
+      <div className="auth-success">
+        <div className="success-icon">🔐</div>
+        <h3 className="success-title">您已处于登录状态</h3>
+        <p className="success-message">
+          当前账号：<strong>{user.email}</strong>
+        </p>
+        <p className="success-hint">
+          如果您忘记了密码，可以直接使用"修改密码"功能。
+        </p>
+        <div style={{ display: 'flex', gap: '12px', width: '100%', flexDirection: 'column' }}>
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            onClick={() => onSwitchTab('change')}
+          >
+            去修改密码
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-block"
+            onClick={logout}
+          >
+            退出登录后找回密码
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (isSubmitted) {

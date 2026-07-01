@@ -1,0 +1,5 @@
+你实现的用户认证系统页面还存在一些问题，需要进行修复：
+1. AuthPage.css 中大量使用了 CSS 自定义属性（如 --bg-page、--primary-color、--danger-color、--text-primary 等），但这些变量在 auth 模块内部没有定义，页面渲染时所有 CSS 属性值解析为无效值，导致页面显示为透明背景、无文字颜色、无边框的完全崩坏状态。需要在 auth 模块的样式文件中定义这些 CSS 变量。
+2. RegisterForm 和 ForgotPasswordForm 组件在用户已登录状态（isAuthenticated 为 true）时直接 return null 返回空内容。当用户注册成功后或已登录用户点击"找回密码" tab 时，主内容区域一片空白，既没有成功反馈也没有自动切换到其他子页面。需要确保在这些场景下页面有合理的展示内容。
+3. validateChangePasswordForm 函数中检查"旧密码不正确"的逻辑使用的是函数签名中的 currentPassword 参数，但调用方 ChangePasswordForm 传入了 formData.oldPassword 作为 currentPassword 参数值，导致 oldPassword 和自己比较永远相等，"旧密码不正确"的错误提示永远不可能触发。需要修复参数传递或校验逻辑。
+4. 修复完成后重新运行 pnpm run test，需要让 auth 相关的所有测试通过。

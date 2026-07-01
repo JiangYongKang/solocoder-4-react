@@ -1,15 +1,20 @@
-import { PRODUCT_STATUS, LOW_STOCK_THRESHOLD } from './types'
 import { getCategoryProducts } from './mockData'
+import { LOW_STOCK_THRESHOLD, PRODUCT_STATUS } from './types'
 
 export const validateStockInput = (value) => {
-  const num = Number(value)
+  const trimmedValue = typeof value === 'string' ? value.trim() : value
+  const num = Number(trimmedValue)
   
-  if (value === '' || value === null || value === undefined) {
+  if (trimmedValue === '' || trimmedValue === null || trimmedValue === undefined) {
     return { valid: false, reason: '库存不能为空' }
   }
   
   if (Number.isNaN(num)) {
     return { valid: false, reason: '库存必须是数字' }
+  }
+  
+  if (!Number.isFinite(num)) {
+    return { valid: false, reason: '库存必须是有限数字' }
   }
   
   if (!Number.isInteger(num)) {
@@ -28,14 +33,19 @@ export const validateStockInput = (value) => {
 }
 
 export const validatePriceInput = (value) => {
-  const num = Number(value)
+  const trimmedValue = typeof value === 'string' ? value.trim() : value
+  const num = Number(trimmedValue)
   
-  if (value === '' || value === null || value === undefined) {
+  if (trimmedValue === '' || trimmedValue === null || trimmedValue === undefined) {
     return { valid: false, reason: '价格不能为空' }
   }
   
   if (Number.isNaN(num)) {
     return { valid: false, reason: '价格必须是数字' }
+  }
+  
+  if (!Number.isFinite(num)) {
+    return { valid: false, reason: '价格必须是有限数字' }
   }
   
   if (num < 0) {
@@ -82,10 +92,13 @@ export const setProductStatus = (products, productId, status) => {
 
 export const batchSetStatus = (products, productIds, status) => {
   const idSet = new Set(productIds)
-  const updatedProducts = products.map(p =>
-    idSet.has(p.id) ? { ...p, status } : p
-  )
-  const affectedCount = products.filter(p => idSet.has(p.id)).length
+  let affectedCount = 0
+  const updatedProducts = products.map(p => {
+    if (!idSet.has(p.id)) return p
+    if (p.status === status) return p
+    affectedCount += 1
+    return { ...p, status }
+  })
   
   return { products: updatedProducts, affectedCount }
 }

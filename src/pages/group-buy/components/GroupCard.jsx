@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { GROUP_STATUS_CONFIG } from '../types'
 import {
-  formatCountdown,
-  calculateGroupProgress,
-  getRemainingSlots,
-  getGroupTimeRemaining,
-  formatGroupDescription
+    calculateGroupProgress,
+    formatCountdown,
+    formatGroupDescription,
+    getGroupTimeRemaining,
+    getRemainingSlots
 } from '../utils/groupBuyManager'
 
 const GroupCard = ({ group, leaderInfo, product, onJoin, isCurrentUserIn }) => {
@@ -29,6 +29,8 @@ const GroupCard = ({ group, leaderInfo, product, onJoin, isCurrentUserIn }) => {
   const progress = calculateGroupProgress(group.members.length, group.minGroupSize)
   const remainingSlots = getRemainingSlots(group.members.length, group.minGroupSize)
   const canJoin = group.status === 'ongoing' && remainingSlots > 0 && !isCurrentUserIn
+  const groupLeader = group.members.find(m => m.isLeader)
+  const leaderNickname = getLeaderNickname(group)
 
   return (
     <div className={`group-card ${group.status}`}>
@@ -57,14 +59,14 @@ const GroupCard = ({ group, leaderInfo, product, onJoin, isCurrentUserIn }) => {
       <div className="leader-section">
         <div className="leader-avatar">
           <span className="leader-avatar-icon">👤</span>
-          {group.members[0]?.isLeader && (
+          {groupLeader && (
             <span className="leader-tag">团长</span>
           )}
         </div>
         <div className="leader-info">
           <div className="leader-name-row">
             <span className="leader-nickname">
-              {leaderInfo?.nickname || group.members[0]?.nickname || '团长'}
+              {leaderInfo?.nickname || leaderNickname}
             </span>
             {leaderInfo?.storeName && (
               <span className="leader-store">{leaderInfo.storeName}</span>

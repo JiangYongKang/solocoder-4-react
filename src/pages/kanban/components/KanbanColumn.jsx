@@ -24,8 +24,21 @@ export default function KanbanColumn({
     if (!isDragOver) {
       setIsDragOver(true)
     }
+    const taskWrapper = e.target.closest('.kanban-task-wrapper')
+    let overIndex = null
+    if (taskWrapper) {
+      const indexAttr = taskWrapper.getAttribute('data-task-index')
+      if (indexAttr !== null) {
+        overIndex = parseInt(indexAttr, 10)
+        const rect = taskWrapper.getBoundingClientRect()
+        const middleY = rect.top + rect.height / 2
+        if (e.clientY > middleY) {
+          overIndex += 1
+        }
+      }
+    }
     if (onTaskDragOver) {
-      onTaskDragOver(columnId)
+      onTaskDragOver(columnId, overIndex)
     }
   }
 

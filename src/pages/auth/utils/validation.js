@@ -122,14 +122,12 @@ export const validateForgotPasswordForm = (formData) => {
   }
 }
 
-export const validateChangePasswordForm = (formData, currentPassword) => {
+export const validateChangePasswordForm = (formData) => {
   const errors = {}
   const { oldPassword, newPassword, confirmNewPassword } = formData
 
   if (!oldPassword) {
     errors.oldPassword = '请输入旧密码'
-  } else if (oldPassword !== currentPassword) {
-    errors.oldPassword = '旧密码不正确'
   }
 
   const newPasswordCheck = validatePasswordStrength(newPassword)

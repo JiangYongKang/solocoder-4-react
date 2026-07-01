@@ -133,7 +133,7 @@ function SearchForm({ onSearch, initialForm }) {
                 placeholder="输入城市或机场代码"
                 value={formData.departure && getCityName(formData.departure) || ''}
                 onChange={(e) => handleInputChange('departure', e.target.value)}
-                onFocus={(e) => setShowCityDropdown({ field: 'departure', keyword: e.target.value })}
+                onFocus={() => setShowCityDropdown({ field: 'departure', keyword: '' })}
                 onBlur={() => setTimeout(() => setShowCityDropdown({ field: null, keyword: '' }), 200)}
               />
               {renderCityDropdown('departure')}
@@ -154,7 +154,7 @@ function SearchForm({ onSearch, initialForm }) {
                 placeholder="输入城市或机场代码"
                 value={formData.arrival && getCityName(formData.arrival) || ''}
                 onChange={(e) => handleInputChange('arrival', e.target.value)}
-                onFocus={(e) => setShowCityDropdown({ field: 'arrival', keyword: e.target.value })}
+                onFocus={() => setShowCityDropdown({ field: 'arrival', keyword: '' })}
                 onBlur={() => setTimeout(() => setShowCityDropdown({ field: null, keyword: '' }), 200)}
               />
               {renderCityDropdown('arrival')}

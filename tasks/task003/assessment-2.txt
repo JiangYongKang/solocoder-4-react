@@ -1,0 +1,6 @@
+产物不满意：
+1. 拖拽排序修复引入了一个新问题：在标签筛选激活状态下，KanbanColumn 通过 groupedFilteredTasks 渲染筛选后的子集，data-task-index 反映的是子集中的位置，但 KanbanPage 中 handleTaskDrop 使用 groupTasksByColumn(prevTasks) 获取的是全量任务列表，直接将从筛选视图中捕获的 dragOverTaskIndex 用作全量列表中的插入索引，导致任务被插入到错误位置。例如 TODO 列有四个任务但筛选只显示两个，用户拖拽任务到筛选视图末尾时 dragOverTaskIndex=2，handleTaskDrop 将其作为全量列表的插入索引 2，而非正确的全量位置。原因是模型在修复时只处理了拖拽悬停索引的上报和接收，没有考虑筛选激活时 filtered view 和 full list 之间的索引映射关系。正确做法是在 drop 计算时判断筛选状态，将筛选视图索引映射回全量列表索引。
+2. 模型删除了 utils.js 中的 sortTasksByPriority 函数和 PriorityOrder 的导入，但 constants.js 中第 25 行 PriorityOrder 的 export 定义仍被保留。全 kanban 目录搜索确认没有任何文件导入 PriorityOrder，该常量已成为死代码。模型只完成了函数和测试代码的清理，遗漏了对常量定义文件的同步清理，没有在删除功能代码后搜索整个 kanban 包确认无遗留引用再一并删除。
+过程不满意：
+1. 模型收到提示词后第一句话是"让我先创建任务列表，然后开始修复"，立即创建了 TodoList 而没有先阅读代码理解问题根因。标注规范明确要求"不能在刚收到任务时就直接创建 TodoList，应先分析问题再规划"。紧接着模型在未梳理清楚拖拽数据结构的情况下就开始编码，引入了 dragOverColumnId 变量，随后被 ESLint 检测出未使用又花费额外步骤将其删除和相关引用，暴露出前期分析不足、边写边改的问题。
+2. 模型先后三次读取 utils.test.js 文件（约 420 行），第一次读了前 300 行，第二次继续读到文件末尾，第三次又返回去查看中间部分的 sortTasksByPriority 测试块。该文件长度并不大，一次读取即可获取完整内容。反复读取同一文件且第三次是回溯查看之前已读过的区域，暴露了读取策略缺乏规划的问题。正确做法是先一次性读完整文件，在脑中整理出所有需要修改的代码区域后再统一修改，而不是边看边改、反复回看。

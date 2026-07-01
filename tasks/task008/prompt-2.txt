@@ -1,0 +1,6 @@
+你实现的外卖点餐页面还存在一些问题，需要进行修复：
+1. generateCartItemId 函数在 selectedSpecs 为空对象或 null 时，生成的 ID 格式为类似"prod-1|"的尾部带竖线分隔符的字符串，虽然不影响去重但在代码阅读和调试时不直观。需要在规格为空时不拼接多余的分隔符。
+2. handleConfirmOrder 函数中当订单提交返回失败时，代码只弹出了浏览器原生 alert 弹窗而未打开 OrderResult 组件展示失败状态，导致 OrderResult 中为失败场景编写的 UI（失败图标、"下单失败"文案和操作按钮）永远无法被触发成为死代码。失败处理和成功处理需要同样使用 OrderResult 组件来展示。
+3. findApplicableDiscount 函数直接对传入的 discountRules 数组调用 sort 方法做原地排序，会永久改变调用方持有的原数组顺序。如果调用方在多处引用同一个数组，第一次调用后的排序结果会影响到其他位置的逻辑。
+4. submitOrder 函数的订单 status 字段硬编码为字符串 'pending'，而非使用 types.js 中定义的状态常量。同时代码中存在未运行 ESLint 检查的问题，如 mockData 中使用了已弃用的 String.prototype.substr() 方法未被发现。
+5. 修复完成后重新运行 pnpm run test，需要让 food-order 相关的所有测试通过。并在修复完成后运行 ESLint 检查 src/pages/food-order/ 目录确保无警告残留。

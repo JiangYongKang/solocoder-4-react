@@ -261,26 +261,14 @@ describe('validateForgotPasswordForm', () => {
 })
 
 describe('validateChangePasswordForm', () => {
-  const currentPassword = 'OldPassword123'
-
   it('有效修改密码表单应通过', () => {
     const result = validateChangePasswordForm({
       oldPassword: 'OldPassword123',
       newPassword: 'NewPassword456',
       confirmNewPassword: 'NewPassword456'
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(true)
     expect(Object.keys(result.errors).length).toBe(0)
-  })
-
-  it('旧密码错误应报错', () => {
-    const result = validateChangePasswordForm({
-      oldPassword: 'WrongPassword',
-      newPassword: 'NewPassword456',
-      confirmNewPassword: 'NewPassword456'
-    }, currentPassword)
-    expect(result.isValid).toBe(false)
-    expect(result.errors.oldPassword).toBe('旧密码不正确')
   })
 
   it('旧密码为空应报错', () => {
@@ -288,7 +276,7 @@ describe('validateChangePasswordForm', () => {
       oldPassword: '',
       newPassword: 'NewPassword456',
       confirmNewPassword: 'NewPassword456'
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(false)
     expect(result.errors.oldPassword).toBe('请输入旧密码')
   })
@@ -298,7 +286,7 @@ describe('validateChangePasswordForm', () => {
       oldPassword: 'OldPassword123',
       newPassword: '123456',
       confirmNewPassword: '123456'
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(false)
     expect(result.errors.newPassword).toBeDefined()
   })
@@ -308,7 +296,7 @@ describe('validateChangePasswordForm', () => {
       oldPassword: 'OldPassword123',
       newPassword: 'OldPassword123',
       confirmNewPassword: 'OldPassword123'
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(false)
     expect(result.errors.newPassword).toBe('新密码不能与旧密码相同')
   })
@@ -318,7 +306,7 @@ describe('validateChangePasswordForm', () => {
       oldPassword: 'OldPassword123',
       newPassword: 'NewPassword456',
       confirmNewPassword: 'DifferentPassword'
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(false)
     expect(result.errors.confirmNewPassword).toBeDefined()
   })
@@ -328,7 +316,7 @@ describe('validateChangePasswordForm', () => {
       oldPassword: '',
       newPassword: '',
       confirmNewPassword: ''
-    }, currentPassword)
+    })
     expect(result.isValid).toBe(false)
     expect(result.errors.oldPassword).toBeDefined()
     expect(result.errors.newPassword).toBeDefined()

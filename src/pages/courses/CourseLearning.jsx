@@ -49,6 +49,16 @@ export default function CourseLearning() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const statsUpdateRef = useRef(0)
   const studyTimeRef = useRef(0)
+  const totalStudyTimeRef = useRef(stats.totalStudyTime || 0)
+  const lessonProgressRef = useRef(lessonProgress)
+
+  useEffect(() => {
+    totalStudyTimeRef.current = stats.totalStudyTime || 0
+  }, [stats.totalStudyTime])
+
+  useEffect(() => {
+    lessonProgressRef.current = lessonProgress
+  }, [lessonProgress])
 
   useEffect(() => {
     statsUpdateRef.current = Date.now()
@@ -61,39 +71,32 @@ export default function CourseLearning() {
     })
   }, [courseId, currentLessonId, currentChapterId])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      studyTimeRef.current += 1
-      const now = Date.now()
-      if (now - statsUpdateRef.current >= 5000) {
-        statsUpdateRef.current = now
-        const courseStats = calculateCourseStats(course, lessonProgress)
-        const newStats = updateStats(courseId, {
-          totalStudyTime: (stats?.totalStudyTime || 0) + studyTimeRef.current,
-          completedLessons: courseStats.completedLessons,
-          courseProgress: courseStats.courseProgress,
-        })
-        if (newStats) {
-          setStats(newStats)
-        }
-        studyTimeRef.current = 0
-      }
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [courseId, course, lessonProgress, stats])
-
-  const refreshStats = useCallback(() => {
-    const courseStats = calculateCourseStats(course, lessonProgress)
+  const updateStatsFromProgress = useCallback(() => {
+    const courseStats = calculateCourseStats(course, lessonProgressRef.current)
     const newStats = updateStats(courseId, {
-      totalStudyTime: stats?.totalStudyTime || 0,
+      totalStudyTime: totalStudyTimeRef.current,
       completedLessons: courseStats.completedLessons,
       courseProgress: courseStats.courseProgress,
     })
     if (newStats) {
       setStats(newStats)
     }
-  }, [courseId, course, lessonProgress, stats])
+  }, [courseId, course])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      studyTimeRef.current += 1
+      totalStudyTimeRef.current += 1
+      const now = Date.now()
+      if (now - statsUpdateRef.current >= 5000) {
+        statsUpdateRef.current = now
+        updateStatsFromProgress()
+        studyTimeRef.current = 0
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [courseId, updateStatsFromProgress])
 
   const currentLesson = findLessonById(course, currentLessonId)?.lesson || null
   const currentChapter = findChapterByLessonId(course, currentLessonId)
@@ -110,7 +113,12 @@ export default function CourseLearning() {
 
   const handleLessonSelect = (lessonId) => {
     setCurrentLessonId(lessonId)
-    const chapter = findChapterByLessonId(course, lessonId)
+    setActiveTab('video')
+    setMobileMenuOpen(false)
+  }
+
+  useEffect(() => {
+    const chapter = findChapterByLessonId(course, currentLessonId)
     if (chapter) {
       setCurrentChapterId(chapter.id)
       if (chapter.quiz) {
@@ -118,19 +126,21 @@ export default function CourseLearning() {
         setQuizResult(savedQuizResult)
       }
     }
-    const lessonNotes = loadNotes(courseId, lessonId)
+    const lessonNotes = loadNotes(courseId, currentLessonId)
     setNotes(lessonNotes)
-    setActiveTab('video')
-    setMobileMenuOpen(false)
-  }
+  }, [courseId, course, currentLessonId])
 
   const handleProgressUpdate = (progress) => {
     saveLessonProgress(courseId, currentLessonId, progress)
-    setLessonProgress((prev) => ({
-      ...prev,
-      [currentLessonId]: progress,
-    }))
-    refreshStats()
+    setLessonProgress((prev) => {
+      const updated = {
+        ...prev,
+        [currentLessonId]: progress,
+      }
+      lessonProgressRef.current = updated
+      return updated
+    })
+    updateStatsFromProgress()
   }
 
   const handleNextLesson = () => {

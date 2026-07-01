@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  MOCK_PRODUCTS,
-  MOCK_GROUP_LEADERS,
-  generateInitialGroups,
-  MOCK_PICKUP_POINTS,
-  generateOrderId,
-  generateVerificationCode,
-  generateAfterSaleId
+    MOCK_GROUP_LEADERS,
+    MOCK_PICKUP_POINTS,
+    MOCK_PRODUCTS,
+    generateAfterSaleId,
+    generateInitialGroups,
+    generateOrderId,
+    generateVerificationCode
 } from '../../group-buy/data/mockData'
 import { GROUP_STATUS, PICKUP_POINT_STATUS } from '../../group-buy/types'
 

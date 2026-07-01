@@ -1,32 +1,32 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
-import {
-  MOCK_PRODUCTS,
-  MOCK_GROUP_LEADERS,
-  generateInitialGroups,
-  MOCK_PICKUP_POINTS
-} from './data/mockData'
-import {
-  formatPrice,
-  createNewGroup,
-  joinGroup,
-  getProductGroups,
-  sortGroupsByUrgency,
-  getOngoingGroups,
-  checkGroupExpiry,
-  createOrder,
-  pickupOrder,
-  completeOrder,
-  applyAfterSale,
-  isUserInGroup
-} from './utils/groupBuyManager'
-import { PRODUCT_STATUS, GROUP_STATUS } from './types'
-import ProductCard from './components/ProductCard'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AfterSaleDetail, AfterSaleForm } from './components/AfterSaleComponents'
 import GroupCard from './components/GroupCard'
-import PickupPointSelector from './components/PickupPointSelector'
-import { OrderConfirmModal, OrderDetailCard } from './components/OrderComponents'
-import { AfterSaleForm, AfterSaleDetail } from './components/AfterSaleComponents'
 import MyOrdersSection from './components/MyOrdersSection'
+import { OrderConfirmModal, OrderDetailCard } from './components/OrderComponents'
+import PickupPointSelector from './components/PickupPointSelector'
+import ProductCard from './components/ProductCard'
+import {
+    generateInitialGroups,
+    MOCK_GROUP_LEADERS,
+    MOCK_PICKUP_POINTS,
+    MOCK_PRODUCTS
+} from './data/mockData'
 import './GroupBuy.css'
+import { GROUP_STATUS, PRODUCT_STATUS } from './types'
+import {
+    applyAfterSale,
+    checkGroupExpiry,
+    completeOrder,
+    createNewGroup,
+    createOrder,
+    formatPrice,
+    getOngoingGroups,
+    getProductGroups,
+    isUserInGroup,
+    joinGroup,
+    pickupOrder,
+    sortGroupsByUrgency
+} from './utils/groupBuyManager'
 
 const CURRENT_USER = {
   id: 'current-user-001',
@@ -131,9 +131,12 @@ const GroupBuyPage = () => {
   const handleViewGroups = useCallback((product) => {
     const productGroups = getProductGroups(groups, product.id)
     const ongoing = sortGroupsByUrgency(getOngoingGroups(productGroups))
-    const others = productGroups.filter(g => g.status !== GROUP_STATUS.ONGOING)
+    const successful = getSuccessfulGroups(productGroups)
+    const others = productGroups.filter(
+      g => g.status !== GROUP_STATUS.ONGOING && g.status !== GROUP_STATUS.SUCCESS
+    )
     setSelectedProduct(product)
-    setViewingGroups([...ongoing, ...others])
+    setViewingGroups([...ongoing, ...successful, ...others])
   }, [groups])
 
   const handleSelectPickupPoint = useCallback(() => {

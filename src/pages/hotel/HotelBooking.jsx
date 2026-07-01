@@ -44,6 +44,8 @@ export default function HotelBooking() {
     remark: '',
   });
 
+  const [guestFormTouched, setGuestFormTouched] = useState(false);
+
   const [orderData, setOrderData] = useState(null);
 
   const searchedHotels = useMemo(() => {
@@ -135,9 +137,7 @@ export default function HotelBooking() {
   const goToConfirm = () => {
     const validation = validateGuestInfo(guestInfo);
     if (!validation.isValid) {
-      const allTouched = { name: true, phone: true, idCard: true };
-      setGuestInfo((prev) => ({ ...prev, _forceTouched: true }));
-      alert('请完善入住人信息：\n' + Object.values(validation.errors).join('\n'));
+      setGuestFormTouched(true);
       return;
     }
     setCurrentStep(STEPS.CONFIRM);
@@ -168,11 +168,15 @@ export default function HotelBooking() {
       email: '',
       remark: '',
     });
+    setGuestFormTouched(false);
     setOrderData(null);
   };
 
   const goBack = (targetStep) => {
     setCurrentStep(targetStep);
+    if (targetStep === STEPS.SEARCH) {
+      setGuestFormTouched(false);
+    }
   };
 
   return (
@@ -235,7 +239,11 @@ export default function HotelBooking() {
             <div className="hb-card">
               <GuestInfoForm
                 guestInfo={guestInfo}
-                onGuestInfoChange={setGuestInfo}
+                onGuestInfoChange={(info) => {
+                  setGuestInfo(info);
+                  setGuestFormTouched(false);
+                }}
+                forceTouched={guestFormTouched}
               />
             </div>
 

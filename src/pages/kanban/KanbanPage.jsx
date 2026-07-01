@@ -32,6 +32,7 @@ export default function KanbanPage() {
   const [modalMode, setModalMode] = useState('add')
   const [editingTask, setEditingTask] = useState(null)
   const [defaultColumnId, setDefaultColumnId] = useState(ColumnIds.TODO)
+  const [modalOpenCounter, setModalOpenCounter] = useState(0)
 
   const allTags = useMemo(() => getAllTags(tasks), [tasks])
 
@@ -71,7 +72,8 @@ export default function KanbanPage() {
     setDragOverTaskIndex(null)
   }, [])
 
-  const handleTaskDragOver = useCallback(() => {
+  const handleTaskDragOver = useCallback((_columnId, taskIndex) => {
+    setDragOverTaskIndex(taskIndex)
   }, [])
 
   const handleTaskDrop = useCallback((dropData) => {
@@ -84,24 +86,31 @@ export default function KanbanPage() {
 
       if (sourceIndex === -1) return prevTasks
 
+      const destTasks = grouped[destColumnId]
+      const destIdx = dragOverTaskIndex !== null
+        ? Math.min(Math.max(dragOverTaskIndex, 0), destTasks.length)
+        : destTasks.length
+
       if (srcColId === destColumnId) {
-        const destIdx = dragOverTaskIndex ?? sourceTasks.length - 1
+        const adjustedDestIdx = destIdx > sourceIndex ? destIdx - 1 : destIdx
+        const clampedDestIdx = Math.min(
+          Math.max(adjustedDestIdx, 0),
+          sourceTasks.length - 1
+        )
         const newSourceTasks = reorderTasksInColumn(
           sourceTasks,
           sourceIndex,
-          Math.min(Math.max(destIdx, 0), sourceTasks.length - 1)
+          clampedDestIdx
         )
         const newGrouped = { ...grouped, [srcColId]: newSourceTasks }
         return flattenGroupedTasks(newGrouped)
       } else {
-        const destTasks = grouped[destColumnId]
-        const destIdx = dragOverTaskIndex ?? destTasks.length
         const newGrouped = moveTaskBetweenColumns(
           grouped,
           srcColId,
           sourceIndex,
           destColumnId,
-          Math.min(Math.max(destIdx, 0), destTasks.length)
+          destIdx
         )
         return flattenGroupedTasks(newGrouped)
       }
@@ -114,6 +123,7 @@ export default function KanbanPage() {
     setModalMode('add')
     setEditingTask(null)
     setDefaultColumnId(columnId)
+    setModalOpenCounter((prev) => prev + 1)
     setModalOpen(true)
   }, [])
 
@@ -121,6 +131,7 @@ export default function KanbanPage() {
     setModalMode('edit')
     setEditingTask(task)
     setDefaultColumnId(task.columnId)
+    setModalOpenCounter((prev) => prev + 1)
     setModalOpen(true)
   }, [])
 
@@ -220,7 +231,7 @@ export default function KanbanPage() {
       </div>
 
       <TaskModal
-        key={`${modalMode}-${editingTask?.id ?? 'new'}-${defaultColumnId}`}
+        key={`${modalMode}-${editingTask?.id ?? 'new'}-${defaultColumnId}-${modalOpenCounter}`}
         isOpen={modalOpen}
         mode={modalMode}
         initialTask={editingTask}

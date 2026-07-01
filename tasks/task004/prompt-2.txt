@@ -1,0 +1,6 @@
+你实现的在线课程学习页面还存在一些问题，需要进行修复：
+1. CourseLearning 组件中存在循环依赖问题：refreshStats 函数被 handleProgressUpdate 调用，但 refreshStats 定义在 handleProgressUpdate 之后且后者又依赖前者计算的 stats，形成了 effect 内部的循环依赖链路，导致学习统计的定时器频繁重建。需要梳理 handler 之间的调用关系，消除循环依赖。
+2. mockData.js 中课程数据的 totalDuration 字段与实际课时 duration 累加值不一致，手动填写的值为 12600 但累加各课时得到的实际总和为 16800，导致学习统计中课程总进度计算出现偏差。需要修复 totalDuration 数据使其与实际课时数据保持一致。
+3. StudyNotes 组件在渲染阶段直接调用 setNotes([]) 来清空状态，在 React 并发模式下可能导致状态更新时序异常。需要将状态同步逻辑移到 useEffect 中追踪 lessonId 变化。
+4. 测试文件中缺少对 findLessonById、getNextLesson、getPrevLesson 等工具函数的单元测试用例。需要补充这些函数的测试覆盖。
+5. 修复完成后重新运行 pnpm run test，需要让 courses 相关的所有测试通过。

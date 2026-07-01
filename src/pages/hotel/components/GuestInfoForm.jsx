@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { validateGuestInfo } from '../utils/validators';
 
-export default function GuestInfoForm({ guestInfo, onGuestInfoChange }) {
+export default function GuestInfoForm({ guestInfo, onGuestInfoChange, forceTouched = false }) {
   const [touched, setTouched] = useState({});
+
+  useEffect(() => {
+    if (forceTouched) {
+      setTouched({ name: true, phone: true, idCard: true });
+    }
+  }, [forceTouched]);
 
   const handleChange = (field, value) => {
     const newInfo = { ...guestInfo, [field]: value };
@@ -10,19 +16,23 @@ export default function GuestInfoForm({ guestInfo, onGuestInfoChange }) {
   };
 
   const handleBlur = (field) => {
-    setTouched({ ...touched, [field]: true });
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const validation = validateGuestInfo(guestInfo);
 
+  const isFieldTouched = (field) => {
+    return touched[field] || forceTouched;
+  };
+
   const getFieldClass = (field) => {
     return `hb-input ${
-      touched[field] && validation.errors[field] ? 'error' : ''
+      isFieldTouched(field) && validation.errors[field] ? 'error' : ''
     }`;
   };
 
   const showError = (field) => {
-    return touched[field] && validation.errors[field];
+    return isFieldTouched(field) && validation.errors[field];
   };
 
   return (

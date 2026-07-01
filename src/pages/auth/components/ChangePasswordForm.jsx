@@ -31,8 +31,7 @@ const ChangePasswordForm = ({ onSwitchTab }) => {
     }
     if (name === 'newPassword' || name === 'confirmNewPassword') {
       const validation = validateChangePasswordForm(
-        { ...formData, [name]: value },
-        formData.oldPassword
+        { ...formData, [name]: value }
       )
       setPasswordLevel(validation.passwordLevel)
     }
@@ -40,7 +39,7 @@ const ChangePasswordForm = ({ onSwitchTab }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const validation = validateChangePasswordForm(formData, formData.oldPassword)
+    const validation = validateChangePasswordForm(formData)
     if (!validation.isValid) {
       setErrors(validation.errors)
       setPasswordLevel(validation.passwordLevel)

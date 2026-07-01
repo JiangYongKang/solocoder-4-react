@@ -51,19 +51,30 @@ export const MOCK_STORES = [
   }
 ]
 
-let numberCounter = 0
+const storeCounters = {}
 
-export const resetNumberCounter = () => {
-  numberCounter = 0
+export const resetNumberCounter = (storeId) => {
+  if (storeId) {
+    delete storeCounters[storeId]
+  } else {
+    Object.keys(storeCounters).forEach(key => delete storeCounters[key])
+  }
+}
+
+const getNextSequence = (storeId) => {
+  if (!storeCounters[storeId]) {
+    storeCounters[storeId] = 0
+  }
+  storeCounters[storeId] += 1
+  return storeCounters[storeId]
 }
 
 export const generateQueueNumber = (storeId, tableType) => {
   const prefix = storeId.slice(-3).toUpperCase()
   const typePrefix = tableType === TABLE_TYPES.SMALL ? 'S' : tableType === TABLE_TYPES.MEDIUM ? 'M' : 'L'
-  const timestamp = Date.now().toString().slice(-6)
-  numberCounter = (numberCounter + 1) % 10000
-  const counter = numberCounter.toString().padStart(4, '0')
-  return `${prefix}${typePrefix}${timestamp}${counter}`
+  const sequence = getNextSequence(storeId)
+  const sequenceStr = sequence.toString().padStart(6, '0')
+  return `${prefix}${typePrefix}${sequenceStr}`
 }
 
 export const simulateQueueUpdate = (currentQueue, storeId) => {
@@ -82,7 +93,7 @@ export const simulateQueueUpdate = (currentQueue, storeId) => {
 }
 
 export const simulateQueueNumberStatus = (currentStatus, waitingCount) => {
-  if (currentStatus === 'cancelled' || currentStatus === 'expired') {
+  if (currentStatus === 'cancelled' || currentStatus === 'expired' || currentStatus === 'called') {
     return currentStatus
   }
   if (waitingCount <= 3 && waitingCount > 0) {

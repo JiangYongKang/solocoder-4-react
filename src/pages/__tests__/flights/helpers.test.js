@@ -321,6 +321,68 @@ describe('calculateOrderPrice', () => {
     const result = calculateOrderPrice(emptySelections, mockPassengers)
     expect(result.flightTotal).toBe(0)
   })
+
+  it('往返时仅选择去程应只计收去程税费，返程未选择不计费', () => {
+    const mixedSelections = [
+      {
+        type: 'departure',
+        flight: mockFlights[0],
+        cabin: { type: 'economy', name: '经济舱', price: 680 }
+      },
+      {
+        type: 'return',
+        flight: null,
+        cabin: null
+      }
+    ]
+    const result = calculateOrderPrice(mixedSelections, mockPassengers)
+    expect(result.validSelectionCount).toBe(1)
+    expect(result.flightTotal).toBe(680 * 2)
+    expect(result.taxTotal).toBe(140 * 1 * 2)
+    expect(result.insuranceTotal).toBe(30 * 1 * 2)
+    expect(result.total).toBe(680 * 2 + 280 + 60)
+  })
+
+  it('去程已选返程仅选航班未选舱位，应只计收去程费用', () => {
+    const mixedSelections = [
+      {
+        type: 'departure',
+        flight: mockFlights[0],
+        cabin: { type: 'economy', name: '经济舱', price: 680 }
+      },
+      {
+        type: 'return',
+        flight: mockFlights[1],
+        cabin: null
+      }
+    ]
+    const result = calculateOrderPrice(mixedSelections, mockPassengers)
+    expect(result.validSelectionCount).toBe(1)
+    expect(result.flightTotal).toBe(680 * 2)
+    expect(result.taxTotal).toBe(140 * 1 * 2)
+    expect(result.insuranceTotal).toBe(30 * 1 * 2)
+  })
+
+  it('去程仅选航班返程完整，应只计收返程费用', () => {
+    const mixedSelections = [
+      {
+        type: 'departure',
+        flight: mockFlights[0],
+        cabin: null
+      },
+      {
+        type: 'return',
+        flight: mockFlights[1],
+        cabin: { type: 'economy', name: '经济舱', price: 520 }
+      }
+    ]
+    const result = calculateOrderPrice(mixedSelections, mockPassengers)
+    expect(result.validSelectionCount).toBe(1)
+    expect(result.flightTotal).toBe(520 * 2)
+    expect(result.taxTotal).toBe(140 * 1 * 2)
+    expect(result.insuranceTotal).toBe(30 * 1 * 2)
+    expect(result.total).toBe(1040 + 280 + 60)
+  })
 })
 
 describe('generateOrderNo', () => {
@@ -331,10 +393,22 @@ describe('generateOrderNo', () => {
 
   it('生成的订单号应唯一', () => {
     const orderNos = new Set()
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 2000; i++) {
       orderNos.add(generateOrderNo())
     }
-    expect(orderNos.size).toBe(100)
+    expect(orderNos.size).toBe(2000)
+  })
+
+  it('订单号中应包含自增计数器，保证同毫秒内也不碰撞', () => {
+    const orderNos = []
+    for (let i = 0; i < 10; i++) {
+      orderNos.push(generateOrderNo())
+    }
+    const unique = new Set(orderNos)
+    expect(unique.size).toBe(10)
+    orderNos.forEach(no => {
+      expect(no.length).toBeGreaterThanOrEqual(2 + 13 + 6 + 3)
+    })
   })
 
   it('订单号长度应足够', () => {

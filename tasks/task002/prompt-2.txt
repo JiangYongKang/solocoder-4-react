@@ -1,0 +1,6 @@
+你实现的商品管理后台页面还存在一些问题，需要进行修复：
+1. validatePriceInput 函数对 Infinity 和 -Infinity 输入没有任何防护，Number(Infinity) 能通过 isNaN 和 >=0 的检查，函数会静默返回 valid: true 且 value 为 Infinity。需要增加有限数检查防止极端值通过校验。
+2. validateStockInput 和 validatePriceInput 函数对空白字符串输入存在缺陷，传入纯空格字符串时不会被判断为空字符串，但 Number(' ') 会转为 0 让后续校验全部通过并静默将库存或价格清为 0。需要在字符串判断前先做 trim 处理。
+3. batchSetStatus 函数统计 affectedCount 时使用的是选中商品的总数而非实际状态发生变化的商品数。如果用户选中 3 件商品（2 件已上架、1 件已下架）执行批量上架，会通知"已批量上架 3 件商品"，但实际只有 1 件状态发生了变化。需要修改统计逻辑只对状态实际变更的商品计数。
+4. 修复后需要为该页面补充纯 JS 函数的单元测试，覆盖 Infinity 输入、空格字符串输入和批量操作状态未变化等边界场景。测试代码放在 src/pages/__tests__/products/ 下。
+5. 修复完成后重新运行 pnpm run test，需要让 products 相关的所有测试通过。

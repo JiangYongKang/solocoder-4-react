@@ -11,10 +11,12 @@ describe('mockData', () => {
     it('should generate queue number with correct format', () => {
       const number = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
       
-      expect(number).toMatch(/^001S\d{10}$/)
+      expect(number).toMatch(/^001S\d{6}$/)
     })
 
     it('should include correct table type prefix', () => {
+      resetNumberCounter('store-001')
+      resetNumberCounter('store-002')
       const smallNumber = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
       const mediumNumber = generateQueueNumber('store-001', TABLE_TYPES.MEDIUM)
       const largeNumber = generateQueueNumber('store-001', TABLE_TYPES.LARGE)
@@ -25,6 +27,8 @@ describe('mockData', () => {
     })
 
     it('should include store id suffix', () => {
+      resetNumberCounter('store-001')
+      resetNumberCounter('store-002')
       const number1 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
       const number2 = generateQueueNumber('store-002', TABLE_TYPES.SMALL)
       
@@ -32,12 +36,61 @@ describe('mockData', () => {
       expect(number2).toContain('002')
     })
 
-    it('should generate unique numbers', () => {
+    it('should generate unique numbers for same store', () => {
       const numbers = new Set()
       for (let i = 0; i < 100; i++) {
         numbers.add(generateQueueNumber('store-001', TABLE_TYPES.SMALL))
       }
       expect(numbers.size).toBe(100)
+    })
+
+    it('should generate monotonically increasing numbers for same store', () => {
+      resetNumberCounter('store-001')
+      const number1 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      const number2 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      const number3 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      
+      expect(number1).toBe('001S000001')
+      expect(number2).toBe('001S000002')
+      expect(number3).toBe('001S000003')
+    })
+
+    it('should generate unique numbers across different stores', () => {
+      resetNumberCounter('store-001')
+      resetNumberCounter('store-002')
+      const number1 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      const number2 = generateQueueNumber('store-002', TABLE_TYPES.SMALL)
+      
+      expect(number1).toBe('001S000001')
+      expect(number2).toBe('002S000001')
+      expect(number1).not.toBe(number2)
+    })
+
+    it('should maintain independent counters for each store', () => {
+      resetNumberCounter('store-001')
+      resetNumberCounter('store-002')
+      
+      generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      const store1Number3 = generateQueueNumber('store-001', TABLE_TYPES.SMALL)
+      
+      generateQueueNumber('store-002', TABLE_TYPES.SMALL)
+      const store2Number2 = generateQueueNumber('store-002', TABLE_TYPES.SMALL)
+      
+      expect(store1Number3).toBe('001S000003')
+      expect(store2Number2).toBe('002S000002')
+    })
+
+    it('should not generate duplicate numbers across different stores even with same sequence', () => {
+      resetNumberCounter('store-001')
+      resetNumberCounter('store-002')
+      
+      const numbers = new Set()
+      for (let i = 0; i < 100; i++) {
+        numbers.add(generateQueueNumber('store-001', TABLE_TYPES.SMALL))
+        numbers.add(generateQueueNumber('store-002', TABLE_TYPES.SMALL))
+      }
+      expect(numbers.size).toBe(200)
     })
   })
 
@@ -109,6 +162,26 @@ describe('mockData', () => {
     it('should not change status for expired', () => {
       const result = simulateQueueNumberStatus(QUEUE_STATUS.EXPIRED, 0)
       expect(result).toBe(QUEUE_STATUS.EXPIRED)
+    })
+
+    it('should not change status for called', () => {
+      const result = simulateQueueNumberStatus(QUEUE_STATUS.CALLED, 10)
+      expect(result).toBe(QUEUE_STATUS.CALLED)
+    })
+
+    it('should not change from cancelled to waiting when waiting count is high', () => {
+      const result = simulateQueueNumberStatus(QUEUE_STATUS.CANCELLED, 10)
+      expect(result).toBe(QUEUE_STATUS.CANCELLED)
+    })
+
+    it('should not change from expired to called when waiting count is 0', () => {
+      const result = simulateQueueNumberStatus(QUEUE_STATUS.EXPIRED, 0)
+      expect(result).toBe(QUEUE_STATUS.EXPIRED)
+    })
+
+    it('should not change from called to soon when waiting count is 3', () => {
+      const result = simulateQueueNumberStatus(QUEUE_STATUS.CALLED, 3)
+      expect(result).toBe(QUEUE_STATUS.CALLED)
     })
   })
 })

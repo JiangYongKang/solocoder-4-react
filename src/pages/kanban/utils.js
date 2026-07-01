@@ -1,4 +1,4 @@
-import { ColumnOrder, PriorityOrder } from './constants.js'
+import { ColumnOrder } from './constants.js'
 
 let idCounter = 0
 
@@ -38,14 +38,6 @@ export function groupTasksByColumn(tasks) {
     result[columnId].sort((a, b) => a.order - b.order)
   }
   return result
-}
-
-export function sortTasksByPriority(tasks) {
-  return [...tasks].sort((a, b) => {
-    const priorityDiff = PriorityOrder[b.priority] - PriorityOrder[a.priority]
-    if (priorityDiff !== 0) return priorityDiff
-    return a.order - b.order
-  })
 }
 
 export function reorderTasksInColumn(tasks, sourceIndex, destinationIndex) {

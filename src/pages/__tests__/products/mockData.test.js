@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
-  generateProductId,
-  resetProductIdCounter,
-  getCategoryProducts,
-  createMockProduct,
-  MOCK_PRODUCTS
+    createMockProduct,
+    generateProductId,
+    getCategoryProducts,
+    MOCK_PRODUCTS,
+    resetProductIdCounter
 } from '../../products/mockData'
 import { PRODUCT_CATEGORIES, PRODUCT_STATUS } from '../../products/types'
 

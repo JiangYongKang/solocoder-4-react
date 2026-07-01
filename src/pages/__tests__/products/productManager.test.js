@@ -1,20 +1,20 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  validateStockInput,
-  validatePriceInput,
-  updateProductStock,
-  toggleProductStatus,
-  setProductStatus,
-  batchOnShelf,
-  batchOffShelf,
-  batchDelete,
-  calculateStatistics,
-  filterProducts,
-  isLowStock,
-  formatPrice,
-  getFilterDescription
+    batchDelete,
+    batchOffShelf,
+    batchOnShelf,
+    calculateStatistics,
+    filterProducts,
+    formatPrice,
+    getFilterDescription,
+    isLowStock,
+    setProductStatus,
+    toggleProductStatus,
+    updateProductStock,
+    validatePriceInput,
+    validateStockInput
 } from '../../products/productManager'
-import { PRODUCT_STATUS, LOW_STOCK_THRESHOLD, CATEGORY_CONFIG, STATUS_CONFIG, PRODUCT_CATEGORIES } from '../../products/types'
+import { CATEGORY_CONFIG, LOW_STOCK_THRESHOLD, PRODUCT_CATEGORIES, PRODUCT_STATUS, STATUS_CONFIG } from '../../products/types'
 
 const createTestProducts = () => [
   { id: '1', name: 'Product 1', category: PRODUCT_CATEGORIES.ELECTRONICS, price: 1000, stock: 50, status: PRODUCT_STATUS.ON_SHELF },
@@ -103,6 +103,42 @@ describe('productManager', () => {
       expect(result.valid).toBe(false)
       expect(result.reason).toBe('库存必须是数字')
     })
+
+    it('should reject whitespace-only string', () => {
+      const result = validateStockInput('   ')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('库存不能为空')
+    })
+
+    it('should reject string with only tabs and newlines', () => {
+      const result = validateStockInput('  \t\n  ')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('库存不能为空')
+    })
+
+    it('should reject Infinity', () => {
+      const result = validateStockInput(Infinity)
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('库存必须是有限数字')
+    })
+
+    it('should reject -Infinity', () => {
+      const result = validateStockInput(-Infinity)
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('库存必须是有限数字')
+    })
+
+    it('should reject string Infinity', () => {
+      const result = validateStockInput('Infinity')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('库存必须是有限数字')
+    })
+
+    it('should accept string with leading/trailing whitespace', () => {
+      const result = validateStockInput('  42  ')
+      expect(result.valid).toBe(true)
+      expect(result.value).toBe(42)
+    })
   })
 
   describe('validatePriceInput', () => {
@@ -146,6 +182,54 @@ describe('productManager', () => {
       const result = validatePriceInput(-10)
       expect(result.valid).toBe(false)
       expect(result.reason).toBe('价格不能为负数')
+    })
+
+    it('should reject whitespace-only string', () => {
+      const result = validatePriceInput('   ')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格不能为空')
+    })
+
+    it('should reject string with only whitespace characters', () => {
+      const result = validatePriceInput('  \t\n\r  ')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格不能为空')
+    })
+
+    it('should reject Infinity', () => {
+      const result = validatePriceInput(Infinity)
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格必须是有限数字')
+    })
+
+    it('should reject -Infinity', () => {
+      const result = validatePriceInput(-Infinity)
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格必须是有限数字')
+    })
+
+    it('should reject string Infinity', () => {
+      const result = validatePriceInput('Infinity')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格必须是有限数字')
+    })
+
+    it('should reject string -Infinity', () => {
+      const result = validatePriceInput('-Infinity')
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格必须是有限数字')
+    })
+
+    it('should accept string with leading/trailing whitespace', () => {
+      const result = validatePriceInput('  99.99  ')
+      expect(result.valid).toBe(true)
+      expect(result.value).toBe(99.99)
+    })
+
+    it('should reject undefined', () => {
+      const result = validatePriceInput(undefined)
+      expect(result.valid).toBe(false)
+      expect(result.reason).toBe('价格不能为空')
     })
   })
 
@@ -263,6 +347,27 @@ describe('productManager', () => {
       expect(result.affectedCount).toBe(0)
       expect(result.products).toEqual(products)
     })
+
+    it('should count only products that actually changed status', () => {
+      const products = createTestProducts()
+      const result = batchOnShelf(products, ['1', '2', '3'])
+      expect(result.affectedCount).toBe(1)
+      expect(result.products.find(p => p.id === '1').status).toBe(PRODUCT_STATUS.ON_SHELF)
+      expect(result.products.find(p => p.id === '2').status).toBe(PRODUCT_STATUS.ON_SHELF)
+      expect(result.products.find(p => p.id === '3').status).toBe(PRODUCT_STATUS.ON_SHELF)
+    })
+
+    it('should return affectedCount 0 when no status changed', () => {
+      const products = createTestProducts()
+      const result = batchOnShelf(products, ['1', '2', '4'])
+      expect(result.affectedCount).toBe(0)
+    })
+
+    it('should return affectedCount 0 when all selected already on shelf', () => {
+      const products = createTestProducts()
+      const result = batchOnShelf(products, ['1', '2'])
+      expect(result.affectedCount).toBe(0)
+    })
   })
 
   describe('batchOffShelf', () => {
@@ -279,6 +384,27 @@ describe('productManager', () => {
       const products = createTestProducts()
       const result = batchOffShelf(products, ['1'])
       expect(result.products.find(p => p.id === '2').status).toBe(PRODUCT_STATUS.ON_SHELF)
+    })
+
+    it('should count only products that actually changed status', () => {
+      const products = createTestProducts()
+      const result = batchOffShelf(products, ['1', '3', '5'])
+      expect(result.affectedCount).toBe(1)
+      expect(result.products.find(p => p.id === '1').status).toBe(PRODUCT_STATUS.OFF_SHELF)
+      expect(result.products.find(p => p.id === '3').status).toBe(PRODUCT_STATUS.OFF_SHELF)
+      expect(result.products.find(p => p.id === '5').status).toBe(PRODUCT_STATUS.OFF_SHELF)
+    })
+
+    it('should return affectedCount 0 when all selected already off shelf', () => {
+      const products = createTestProducts()
+      const result = batchOffShelf(products, ['3', '5'])
+      expect(result.affectedCount).toBe(0)
+    })
+
+    it('should handle mixed status selection correctly', () => {
+      const products = createTestProducts()
+      const result = batchOffShelf(products, ['1', '3', '4', '5'])
+      expect(result.affectedCount).toBe(2)
     })
   })
 

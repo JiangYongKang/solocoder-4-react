@@ -1,7 +1,19 @@
 import { generateOrderId } from '../data/mockData'
+import { ORDER_STATUS } from '../types'
 
 export const generateCartItemId = (productId, selectedSpecs) => {
-  const specKey = Object.entries(selectedSpecs || {})
+  const specEntries = Object.entries(selectedSpecs || {}).filter(([, optionIds]) => {
+    if (Array.isArray(optionIds)) {
+      return optionIds.length > 0
+    }
+    return optionIds !== undefined && optionIds !== null
+  })
+
+  if (specEntries.length === 0) {
+    return productId
+  }
+
+  const specKey = specEntries
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([groupId, optionIds]) => {
       const sortedIds = Array.isArray(optionIds) ? [...optionIds].sort() : [optionIds]
@@ -208,7 +220,7 @@ export const submitOrder = (cart, address, remark, subtotal, discount, deliveryF
       total
     },
     createdAt: Date.now(),
-    status: 'pending'
+    status: ORDER_STATUS.PENDING
   }
 
   return {

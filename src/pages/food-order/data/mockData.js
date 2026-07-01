@@ -344,6 +344,6 @@ export const MOCK_STORE_INFO = {
 
 export const generateOrderId = () => {
   const timestamp = Date.now()
-  const random = Math.random().toString(36).substr(2, 6).toUpperCase()
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
   return `FD${timestamp}${random}`
 }

@@ -1070,7 +1070,7 @@
   line-height: 1.4;
 }
 
-.pickup-point-name-row {
+.selected-pickup-name-row {
   display: flex;
   align-items: center;
   gap: 6px;

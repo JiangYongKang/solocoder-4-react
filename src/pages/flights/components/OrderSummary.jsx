@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { calculateOrderPrice, generateOrderNo, formatDate } from '../utils/helpers'
 import { CITIES } from '../data/mockData'
+import { calculateOrderPrice, formatDate, generateOrderNo } from '../utils/helpers'
 
 function OrderSummary({
   tripType,
@@ -115,21 +115,21 @@ function OrderSummary({
 
         <div className="price-row">
           <span className="price-label">
-            燃油附加费 (¥{price.fuelTax}/人 × {selectedPassengers.length}人 × {selections.length}程)
+            燃油附加费 (¥{price.fuelTax}/人 × {selectedPassengers.length}人 × {price.validSelectionCount}程)
           </span>
-          <span className="price-value">¥{price.fuelTax * selectedPassengers.length * selections.length}</span>
+          <span className="price-value">¥{price.fuelTax * selectedPassengers.length * price.validSelectionCount}</span>
         </div>
 
         <div className="price-row">
           <span className="price-label">
-            机场建设费 (¥{price.airportTax}/人 × {selectedPassengers.length}人 × {selections.length}程)
+            机场建设费 (¥{price.airportTax}/人 × {selectedPassengers.length}人 × {price.validSelectionCount}程)
           </span>
-          <span className="price-value">¥{price.airportTax * selectedPassengers.length * selections.length}</span>
+          <span className="price-value">¥{price.airportTax * selectedPassengers.length * price.validSelectionCount}</span>
         </div>
 
         <div className="price-row">
           <span className="price-label">
-            航空意外险 (¥{price.insurancePerPerson}/人 × {selectedPassengers.length}人 × {selections.length}程)
+            航空意外险 (¥{price.insurancePerPerson}/人 × {selectedPassengers.length}人 × {price.validSelectionCount}程)
           </span>
           <span className="price-value">¥{price.insuranceTotal}</span>
         </div>

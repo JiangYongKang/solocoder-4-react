@@ -1,5 +1,5 @@
 import { ORDER_STATUS_CONFIG } from '../types'
-import { formatPrice, formatPickupDeadline, formatDate } from '../utils/groupBuyManager'
+import { formatDate, formatPickupDeadline, formatPrice } from '../utils/groupBuyManager'
 
 const MyOrdersSection = ({ orders, afterSales, onViewOrder, onViewAfterSale }) => {
   if (orders.length === 0) {

@@ -1,27 +1,27 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MOCK_PRODUCTS } from './mockData'
-import {
-  PRODUCT_CATEGORIES,
-  CATEGORY_CONFIG,
-  PRODUCT_STATUS,
-  STATUS_CONFIG,
-  NOTIFICATION_TYPES,
-  LOW_STOCK_THRESHOLD
-} from './types'
-import {
-  updateProductStock,
-  toggleProductStatus,
-  batchOnShelf,
-  batchOffShelf,
-  batchDelete,
-  calculateStatistics,
-  filterProducts,
-  isLowStock,
-  formatPrice,
-  getFilterDescription,
-  validateStockInput
-} from './productManager'
 import './ProductManagement.css'
+import {
+    batchDelete,
+    batchOffShelf,
+    batchOnShelf,
+    calculateStatistics,
+    filterProducts,
+    formatPrice,
+    getFilterDescription,
+    isLowStock,
+    toggleProductStatus,
+    updateProductStock,
+    validateStockInput
+} from './productManager'
+import {
+    CATEGORY_CONFIG,
+    LOW_STOCK_THRESHOLD,
+    NOTIFICATION_TYPES,
+    PRODUCT_CATEGORIES,
+    PRODUCT_STATUS,
+    STATUS_CONFIG
+} from './types'
 
 const NotificationArea = ({ notifications, onDismiss }) => {
   if (notifications.length === 0) return null

@@ -1,0 +1,9 @@
+产物不满意：
+1. mockData.test.js 中存在多处冗余的 resetNumberCounter 显式调用。测试文件的 beforeEach 钩子已经调用了 resetNumberCounter()（无参数）清除所有门店计数器，但 "should include correct table type prefix"、"should include store id suffix"、"should generate monotonically increasing numbers for same store" 等多个测试内部仍然重复调用了 resetNumberCounter('store-001') 甚至 resetNumberCounter('store-002')。其中最典型的是 "should include correct table type prefix" 测试只使用了 store-001 生成号码，却多余地重置了 store-002 的计数器，这个调用完全没有被后续断言引用。这说明模型在添加测试用例时采用了机械式复制粘贴的方式，没有理解 beforeEach 已经为每个测试提供了充分的计数器隔离，导致测试代码中存在不必要的重复设置逻辑。
+
+2. simulateQueueNumberStatus 的终止态测试用例存在冗余。测试文件为 cancelled、expired 和 called 三个终止态各写了两组测试：一组用基础条件（如 "should not change status for cancelled"），另一组用特定 waitingCount 值重新验证（如 "should not change from cancelled to waiting when waiting count is high"）。但 simulateQueueNumberStatus 函数内部对三个终止态的防护逻辑是函数入口第一行的 return currentStatus 提前返回，根本不读取 waitingCount 参数的值。因此不论传 0、3 还是 10，对终止态号码的行为完全相同，后三组测试用例与前三组测试的覆盖范围完全重叠，没有为测试集增加任何新的断言能力或边界覆盖，属于纯粹的冗余测试。
+
+过程不满意：
+1. 模型在收到提示词后、尚未阅读任何相关代码文件的情况下，直接创建了 4 项 TodoList。正确的流程应该是先分析提示词中指出的两个核心问题（generateQueueNumber 的随机数唯一性缺陷和 simulateQueueNumberStatus 的状态机防护缺失），然后读取 mockData.js 和 mockData.test.js 理解当前实现的具体代码结构和缺陷位置，再根据分析结果制定修复计划。模型跳过分析步骤直接进入规划，反映出对提示词理解不够深入就急于动手的习惯，可能导致修复方案与问题根因之间的匹配度不足。
+
+2. 模型执行测试时使用的命令为 `pnpm run test -- src/pages/__tests__/restaurant-queue/ --reporter=verbose undefined`，随后又执行了 `npx vitest run src/pages/__tests__/restaurant-queue/ --reporter=verbose undefined`，两条命令末尾都出现了字面量字符串 `undefined`。这明显是工具调用模板中某个可选参数（如 shell id 或 timeout）未被正确赋值、JavaScript 将其序列化为字符串 `undefined` 的结果。虽然 vitest 忽略了多余参数使测试得以通过，但暴露出模型在使用 Shell 工具构造命令时对参数模板的填充校验不严谨，没有在发出命令前检查参数是否被正确替换为有效值。

@@ -1,36 +1,36 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { generateInitialGroups, MOCK_GROUP_LEADERS, MOCK_PICKUP_POINTS, MOCK_PRODUCTS } from '../../group-buy/data/mockData'
+import { AFTER_SALE_STATUS, GROUP_STATUS, ORDER_STATUS, PICKUP_POINT_STATUS } from '../../group-buy/types'
 import {
-  formatPrice,
-  formatCountdown,
-  calculateGroupProgress,
-  getRemainingSlots,
-  canJoinGroup,
-  createNewGroup,
-  joinGroup,
-  checkGroupExpiry,
-  getGroupTimeRemaining,
-  isPickupPointAvailable,
-  validatePickupSelection,
-  createOrder,
-  pickupOrder,
-  completeOrder,
-  canApplyAfterSale,
-  applyAfterSale,
-  getAfterSaleStatusText,
-  canPickupOrder,
-  formatPickupDeadline,
-  getProductGroups,
-  sortGroupsByUrgency,
-  getOngoingGroups,
-  getSuccessfulGroups,
-  isUserInGroup,
-  getGroupMemberCount,
-  formatGroupDescription,
-  formatDate,
-  maskPhone
+    applyAfterSale,
+    calculateGroupProgress,
+    canApplyAfterSale,
+    canJoinGroup,
+    canPickupOrder,
+    checkGroupExpiry,
+    completeOrder,
+    createNewGroup,
+    createOrder,
+    formatCountdown,
+    formatDate,
+    formatGroupDescription,
+    formatPickupDeadline,
+    formatPrice,
+    getAfterSaleStatusText,
+    getGroupMemberCount,
+    getGroupTimeRemaining,
+    getOngoingGroups,
+    getProductGroups,
+    getRemainingSlots,
+    getSuccessfulGroups,
+    isPickupPointAvailable,
+    isUserInGroup,
+    joinGroup,
+    maskPhone,
+    pickupOrder,
+    sortGroupsByUrgency,
+    validatePickupSelection
 } from '../../group-buy/utils/groupBuyManager'
-import { GROUP_STATUS, ORDER_STATUS, AFTER_SALE_STATUS, PICKUP_POINT_STATUS } from '../../group-buy/types'
-import { MOCK_PRODUCTS, MOCK_GROUP_LEADERS, generateInitialGroups, MOCK_PICKUP_POINTS } from '../../group-buy/data/mockData'
 
 const createMockGroup = (overrides = {}) => {
   const now = Date.now()
@@ -227,6 +227,25 @@ describe('groupBuyManager - Group Join/Create Functions', () => {
       expect(group.startTime).toBeLessThanOrEqual(Date.now())
       expect(group.endTime).toBeGreaterThan(Date.now())
     })
+
+    it('should generate unique group ids with counter and random parts', () => {
+      const product = MOCK_PRODUCTS[0]
+      const leader = MOCK_GROUP_LEADERS[0]
+      const ids = new Set()
+      const memberIds = new Set()
+
+      for (let i = 0; i < 50; i++) {
+        const group = createNewGroup(product, leader)
+        ids.add(group.id)
+        memberIds.add(group.members[0].id)
+
+        expect(group.id).toMatch(/^group-\d+-[0-9a-z]+-[0-9a-z]+$/)
+        expect(group.members[0].id).toMatch(/^mem-\d+-[0-9a-z]+-[0-9a-z]+$/)
+      }
+
+      expect(ids.size).toBe(50)
+      expect(memberIds.size).toBe(50)
+    })
   })
 
   describe('joinGroup', () => {
@@ -269,6 +288,23 @@ describe('groupBuyManager - Group Join/Create Functions', () => {
 
       expect(result.success).toBe(true)
       expect(result.group.members[1].id).toMatch(/^mem-/)
+    })
+
+    it('should generate unique member ids across joins', () => {
+      const memberIds = new Set()
+
+      for (let i = 0; i < 30; i++) {
+        const group = createMockGroup({
+          members: [
+            { id: `leader-${i}`, isLeader: true, nickname: '团长', joinTime: Date.now() }
+          ]
+        })
+        const result = joinGroup(group, { nickname: `用户${i}` })
+        expect(result.success).toBe(true)
+        memberIds.add(result.group.members[1].id)
+      }
+
+      expect(memberIds.size).toBe(30)
     })
   })
 })
@@ -405,6 +441,37 @@ describe('groupBuyManager - Order Functions', () => {
       const failedGroup = createMockGroup({ status: GROUP_STATUS.FAILED })
       const result = createOrder(validProduct, failedGroup, validPickup, {})
       expect(result.success).toBe(false)
+    })
+
+    it('should fail when quantity is zero or negative', () => {
+      const result1 = createOrder(validProduct, validGroup, validPickup, {}, 0)
+      expect(result1.success).toBe(false)
+      expect(result1.message).toContain('大于0')
+
+      const result2 = createOrder(validProduct, validGroup, validPickup, {}, -5)
+      expect(result2.success).toBe(false)
+    })
+
+    it('should fail when product stock is zero', () => {
+      const noStockProduct = { ...validProduct, stock: 0 }
+      const result = createOrder(noStockProduct, validGroup, validPickup, {}, 1)
+      expect(result.success).toBe(false)
+      expect(result.message).toContain('售罄')
+    })
+
+    it('should fail when quantity exceeds stock', () => {
+      const lowStockProduct = { ...validProduct, stock: 3 }
+      const result = createOrder(lowStockProduct, validGroup, validPickup, {}, 5)
+      expect(result.success).toBe(false)
+      expect(result.message).toContain('库存不足')
+      expect(result.message).toContain('3')
+    })
+
+    it('should calculate remaining stock correctly after order', () => {
+      const stockProduct = { ...validProduct, stock: 10 }
+      const result = createOrder(stockProduct, validGroup, validPickup, {}, 3)
+      expect(result.success).toBe(true)
+      expect(result.order.remainingStock).toBe(7)
     })
   })
 

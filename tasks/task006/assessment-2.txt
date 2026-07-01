@@ -1,0 +1,6 @@
+产物不满意：
+1. helpers.test.js 中 calculateOrderPrice 的现有测试用例"无选择航班有乘客不影响机票总价"仅验证了 flightTotal 为 0，未补充对 taxTotal 和 insuranceTotal 的断言。修复前该用例传入 flight 为 null 且 cabin 为 null 的 selection，旧逻辑用 selections.length 计算税费导致 taxTotal 和 insuranceTotal 返回非零值，但因测试只检查 flightTotal 被遗漏。修复后改用 validCount，taxTotal 和 insuranceTotal 从非零变为零，但测试未同步更新对这两个字段的断言，使修复在边界场景缺少回归验证。应补充 expect(taxTotal).toBe(0) 和 expect(insuranceTotal).toBe(0)。
+2. helpers.test.js 中 generateOrderNo 的新测试"订单号中应包含自增计数器，保证同毫秒内也不碰撞"声称验证同毫秒防碰撞，但未 mock Date.now()。十次循环调用可能跨越不同毫秒，仅靠时间戳与随机数即可通过测试，无法验证计数器的作用。正确做法是使用 vi.spyOn(Date, 'now').mockReturnValue 将时间戳统一固定，再连续生成订单号校验唯一性，才能确保证明计数器在同毫秒内的防碰撞效果。
+过程不满意：
+1. 模型在修复过程中存在重复操作。修改测试前连续两次调用 view_files 读取 helpers.test.js，中间无任何修改。修改 OrderSummary.jsx 前同样连续两次读取同一文件。验证阶段又连续执行两次相同的 vitest 命令。这种重复读取文件和重复执行命令的模式说明模型缺乏"刚读过不需重读"和"已通过不需重跑"的状态感知，降低了 token 和时间的利用效率。
+2. 模型在收到提示词的第一时间就调用了 todo_write 创建 TodoList，然后才开始读取 helpers.js、FlightList.jsx、SearchForm.jsx。创建任务清单发生在分析代码之前，意味着规划基于对提示词的表面理解而非对代码实际状态的分析。正确做法是先通读所有相关文件，理清代码结构和问题所在，再据此制定修复计划。这种先规划后分析的顺序颠倒是过程质量的硬伤。

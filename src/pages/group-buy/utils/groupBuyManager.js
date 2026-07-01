@@ -1,5 +1,14 @@
-import { generateOrderId, generateVerificationCode, generateAfterSaleId } from '../data/mockData'
-import { GROUP_STATUS, ORDER_STATUS, AFTER_SALE_STATUS, PICKUP_POINT_STATUS } from '../types'
+import { generateAfterSaleId, generateOrderId, generateVerificationCode } from '../data/mockData'
+import { AFTER_SALE_STATUS, GROUP_STATUS, ORDER_STATUS, PICKUP_POINT_STATUS } from '../types'
+
+let idCounter = 0
+const generateUniqueId = (prefix) => {
+  idCounter += 1
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).slice(2, 10)
+  const counter = idCounter.toString(36).padStart(4, '0')
+  return `${prefix}-${timestamp}-${counter}-${random}`
+}
 
 export const formatPrice = (price) => {
   return `¥${price.toFixed(2)}`
@@ -35,10 +44,10 @@ export const canJoinGroup = (group, currentUserId = null) => {
 export const createNewGroup = (product, leader) => {
   const now = Date.now()
   const defaultDuration = 2 * 60 * 60 * 1000
-  const memberId = `mem-${now}-${Math.random().toString(36).substr(2, 4)}`
+  const memberId = generateUniqueId('mem')
 
   return {
-    id: `group-${now}-${Math.random().toString(36).substr(2, 6)}`,
+    id: generateUniqueId('group'),
     productId: product.id,
     leaderId: leader.id,
     members: [
@@ -62,7 +71,7 @@ export const joinGroup = (group, userInfo) => {
   }
 
   const newMember = {
-    id: userInfo.id || `mem-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    id: userInfo.id || generateUniqueId('mem'),
     isLeader: false,
     nickname: userInfo.nickname || '新用户',
     joinTime: Date.now()
@@ -125,6 +134,22 @@ export const validatePickupSelection = (pickupPoint) => {
 }
 
 export const createOrder = (product, group, pickupPoint, userInfo, quantity = 1) => {
+  if (quantity <= 0) {
+    return { success: false, message: '购买数量必须大于0', order: null }
+  }
+
+  if (product.stock <= 0) {
+    return { success: false, message: '商品已售罄，无法下单', order: null }
+  }
+
+  if (quantity > product.stock) {
+    return {
+      success: false,
+      message: `库存不足，当前库存${product.stock}件，请减少购买数量`,
+      order: null
+    }
+  }
+
   const pickupValidation = validatePickupSelection(pickupPoint)
   if (!pickupValidation.valid) {
     return { success: false, message: pickupValidation.message, order: null }
@@ -154,7 +179,8 @@ export const createOrder = (product, group, pickupPoint, userInfo, quantity = 1)
     verificationCode,
     status: ORDER_STATUS.PAID,
     createdAt: Date.now(),
-    pickupDeadline: Date.now() + 7 * 24 * 60 * 60 * 1000
+    pickupDeadline: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    remainingStock: product.stock - quantity
   }
 
   return {

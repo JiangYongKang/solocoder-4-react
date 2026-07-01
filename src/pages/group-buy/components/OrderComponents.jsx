@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import {
-  formatPrice,
-  validatePickupSelection,
-  formatPickupDeadline
-} from '../utils/groupBuyManager'
 import { ORDER_STATUS_CONFIG } from '../types'
+import {
+    formatPickupDeadline,
+    formatPrice,
+    validatePickupSelection
+} from '../utils/groupBuyManager'
 
 const OrderConfirmModal = ({
   product,
@@ -91,7 +91,7 @@ const OrderConfirmModal = ({
           </div>
           {pickupPoint ? (
             <div className="selected-pickup-info">
-              <div className="pickup-point-name-row">
+              <div className="selected-pickup-name-row">
                 <span className="pickup-icon">📍</span>
                 <span className="pickup-point-name-small">{pickupPoint.name}</span>
               </div>
@@ -252,3 +252,4 @@ const OrderDetailCard = ({ order, onPickup, onComplete, onApplyAfterSale, onClos
 }
 
 export { OrderConfirmModal, OrderDetailCard }
+

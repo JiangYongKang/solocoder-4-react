@@ -4,7 +4,6 @@ import {
   resetIdCounter,
   createTask,
   groupTasksByColumn,
-  sortTasksByPriority,
   reorderTasksInColumn,
   moveTaskBetweenColumns,
   flattenGroupedTasks,
@@ -108,38 +107,6 @@ describe('groupTasksByColumn', () => {
     for (const colId of ColumnOrder) {
       expect(grouped[colId]).toEqual([])
     }
-  })
-})
-
-describe('sortTasksByPriority', () => {
-  it('should sort tasks by priority descending', () => {
-    const tasks = [
-      { id: '1', priority: Priority.LOW, order: 0 },
-      { id: '2', priority: Priority.HIGH, order: 0 },
-      { id: '3', priority: Priority.MEDIUM, order: 0 },
-    ]
-    const sorted = sortTasksByPriority(tasks)
-    expect(sorted.map((t) => t.id)).toEqual(['2', '3', '1'])
-  })
-
-  it('should use order as secondary sort key', () => {
-    const tasks = [
-      { id: '1', priority: Priority.HIGH, order: 2 },
-      { id: '2', priority: Priority.HIGH, order: 0 },
-      { id: '3', priority: Priority.HIGH, order: 1 },
-    ]
-    const sorted = sortTasksByPriority(tasks)
-    expect(sorted.map((t) => t.id)).toEqual(['2', '3', '1'])
-  })
-
-  it('should not mutate original array', () => {
-    const tasks = [
-      { id: '1', priority: Priority.LOW, order: 0 },
-      { id: '2', priority: Priority.HIGH, order: 0 },
-    ]
-    const originalIds = tasks.map((t) => t.id)
-    sortTasksByPriority(tasks)
-    expect(tasks.map((t) => t.id)).toEqual(originalIds)
   })
 })
 
